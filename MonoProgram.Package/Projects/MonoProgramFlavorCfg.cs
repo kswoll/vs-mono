@@ -382,9 +382,11 @@ namespace MonoProgram.Package.Projects
             return VSConstants.S_OK;
         }
 
-        public int AdviseBuildStatusCallback(IVsBuildStatusCallback pIVsBuildStatusCallback, out uint pdwCookie)
+        public int AdviseBuildStatusCallback(IVsBuildStatusCallback callback, out uint pdwCookie)
         {
-            throw new NotImplementedException();
+            callback.BuildEnd(1);
+            pdwCookie = 0;
+            return VSConstants.S_OK;
         }
 
         public int UnadviseBuildStatusCallback(uint dwCookie)
@@ -392,9 +394,30 @@ namespace MonoProgram.Package.Projects
             throw new NotImplementedException();
         }
 
-        public int StartBuild(IVsOutputWindowPane pIVsOutputWindowPane, uint dwOptions)
+        public int StartBuild(IVsOutputWindowPane outputPane, uint dwOptions)
         {
-            throw new NotImplementedException();
+            outputPane.OutputString("Starting build...\r\n");
+            var script = @"cd /mnt/c/dev/TestDebug/TestDebug
+xbuild
+exit
+".Replace("\r\n", "\n");
+            var bash = @"c:\Windows\Sysnative\bash.exe";
+            var tempFile = Path.GetTempFileName();
+            var arguments = $"--init-file {ConvertToUnixPath(tempFile)}";
+            File.WriteAllText(tempFile, script);
+            var process = System.Diagnostics.Process.Start(bash, arguments);
+            process.WaitForExit();
+            outputPane.OutputString("Done building\r\n");
+
+            return VSConstants.S_OK;
+        }
+
+        private static string ConvertToUnixPath(string file)
+        {
+            var result = file.Replace("\\", "/").Replace(":", "");
+            result = char.ToLower(result[0]) + result.Substring(1);
+            result = "/mnt/" + result;
+            return result;
         }
 
         public int StartClean(IVsOutputWindowPane pIVsOutputWindowPane, uint dwOptions)
@@ -402,9 +425,11 @@ namespace MonoProgram.Package.Projects
             throw new NotImplementedException();
         }
 
-        public int StartUpToDateCheck(IVsOutputWindowPane pIVsOutputWindowPane, uint dwOptions)
+        public int StartUpToDateCheck(IVsOutputWindowPane outputPane, uint dwOptions)
         {
-            throw new NotImplementedException();
+            outputPane.OutputString("Beginning update check!!\n");
+            return VSConstants.S_FALSE;
+//            return VSConstants.S_OK;
         }
 
         public int QueryStatus(out int pfBuildDone)
@@ -414,17 +439,20 @@ namespace MonoProgram.Package.Projects
 
         public int Stop(int fSync)
         {
-            throw new NotImplementedException();
+            return VSConstants.S_OK;
         }
 
+        [Obsolete]
         public int Wait(uint dwMilliseconds, int fTickWhenMessageQNotEmpty)
         {
-            throw new NotImplementedException();
+            return VSConstants.S_OK;
         }
 
         public int QueryStartBuild(uint dwOptions, int[] pfSupported, int[] pfReady)
         {
-            throw new NotImplementedException();
+            pfSupported[0] = 1;
+            pfReady[0] = 1;
+            return VSConstants.S_OK;
         }
 
         public int QueryStartClean(uint dwOptions, int[] pfSupported, int[] pfReady)
@@ -438,10 +466,11 @@ namespace MonoProgram.Package.Projects
 
 //            var builtGroup = dteProject.ConfigurationManager.ActiveConfiguration.OutputGroups.OfType<EnvDTE.OutputGroup>().First(x => x.CanonicalName == "Built");
 
+            pfSupported[0] = 1;
             return VSConstants.S_OK;
         }
 
-        public static EnvDTE.Project GetDTEProject(IVsHierarchy hierarchy)
+        public static Project GetDTEProject(IVsHierarchy hierarchy)
         {
             if (hierarchy == null)
                 throw new ArgumentNullException("hierarchy");
@@ -453,7 +482,9 @@ namespace MonoProgram.Package.Projects
 
         public int QueryStartUpToDateCheck(uint dwOptions, int[] pfSupported, int[] pfReady)
         {
-            throw new NotImplementedException();
+            pfSupported[0] = 0;
+            pfReady[0] = 1;
+            return VSConstants.S_OK;
         }
     }
 }
