@@ -1,14 +1,18 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
+using System.Linq;
 using System.Runtime.InteropServices;
 using System.Xml;
+using EnvDTE;
+using EnvDTE80;
 using Microsoft.VisualStudio;
 using Microsoft.VisualStudio.OLE.Interop;
 using Microsoft.VisualStudio.Shell.Interop;
 
 namespace MonoProgram.Package.Projects
 {
-    public class MonoProgramFlavorCfg : IVsProjectFlavorCfg, IPersistXMLFragment, IVsDebuggableProjectCfg
+    public class MonoProgramFlavorCfg : IVsProjectFlavorCfg, IPersistXMLFragment, IVsDebuggableProjectCfg, IVsBuildableProjectCfg
     {
         /// <summary>
         /// This allows the property page to map a IVsCfg object (the baseConfiguration) to an actual instance of 
@@ -16,10 +20,11 @@ namespace MonoProgram.Package.Projects
         /// </summary>
         private static readonly Dictionary<IVsCfg, MonoProgramFlavorCfg> mapIVsCfgToCustomPropertyPageProjectFlavorCfg = new Dictionary<IVsCfg, MonoProgramFlavorCfg>();
 
-        private readonly IVsHierarchy project;
+        private readonly MonoProgramProjectFlavor project;
         private readonly IVsCfg baseProjectCfg;
         private readonly IVsProjectFlavorCfg innerProjectFlavorCfg;
         private readonly IVsDebuggableProjectCfg baseDebugConfiguration;
+//        private readonly IVsBuildableProjectCfg baseBuildConfiguration;
         private readonly Dictionary<string, string> propertiesList = new Dictionary<string, string>();
 
         private bool isClosed;
@@ -32,9 +37,14 @@ namespace MonoProgram.Package.Projects
             this.innerProjectFlavorCfg = innerProjectFlavorCfg;
 
             var debugGuid = typeof(IVsDebuggableProjectCfg).GUID;
-            IntPtr baseConfigurationPtr;
-		    innerProjectFlavorCfg.get_CfgType(ref debugGuid, out baseConfigurationPtr);
-		    baseDebugConfiguration = (IVsDebuggableProjectCfg)Marshal.GetObjectForIUnknown(baseConfigurationPtr);
+            IntPtr baseDebugConfigurationPtr;
+		    innerProjectFlavorCfg.get_CfgType(ref debugGuid, out baseDebugConfigurationPtr);
+		    baseDebugConfiguration = (IVsDebuggableProjectCfg)Marshal.GetObjectForIUnknown(baseDebugConfigurationPtr);
+
+//            var buildGuid = typeof(IVsBuildableProjectCfg).GUID;
+//            IntPtr baseBuildConfigurationPtr;
+//            innerProjectFlavorCfg.get_CfgType(ref buildGuid, out baseBuildConfigurationPtr);
+//            baseBuildConfiguration = (IVsBuildableProjectCfg)Marshal.GetObjectForIUnknown(baseBuildConfigurationPtr);
         }
 
         /// <summary>
@@ -51,6 +61,16 @@ namespace MonoProgram.Package.Projects
 		        ppCfg = Marshal.GetComInterfaceForObject(this, typeof(IVsDebuggableProjectCfg));
 		        return VSConstants.S_OK;
 		    }
+            if (iidCfg == typeof(IVsBuildableProjectCfg2).GUID)
+            {
+                ppCfg = Marshal.GetComInterfaceForObject(this, typeof(IVsBuildableProjectCfg2));
+                return VSConstants.S_OK;
+            }
+            if (iidCfg == typeof(IVsBuildableProjectCfg).GUID)
+            {
+                ppCfg = Marshal.GetComInterfaceForObject(this, typeof(IVsBuildableProjectCfg));
+                return VSConstants.S_OK;
+            }
             if (innerProjectFlavorCfg != null)
             {
                 return innerProjectFlavorCfg.get_CfgType(ref iidCfg, out ppCfg);
@@ -106,6 +126,7 @@ namespace MonoProgram.Package.Projects
             Marshal.ReleaseComObject(baseProjectCfg);
             Marshal.ReleaseComObject(innerProjectFlavorCfg);
             Marshal.ReleaseComObject(baseDebugConfiguration);
+//            Marshal.ReleaseComObject(baseBuildConfiguration);
 
             return hr;
         }
@@ -354,5 +375,85 @@ namespace MonoProgram.Package.Projects
 	    {
 	        return baseDebugConfiguration.QueryDebugLaunch(grfLaunch, out pfCanLaunch);
 	    }
+
+        public int get_ProjectCfg(out IVsProjectCfg ppIVsProjectCfg)
+        {
+            ppIVsProjectCfg = this;
+            return VSConstants.S_OK;
+        }
+
+        public int AdviseBuildStatusCallback(IVsBuildStatusCallback pIVsBuildStatusCallback, out uint pdwCookie)
+        {
+            throw new NotImplementedException();
+        }
+
+        public int UnadviseBuildStatusCallback(uint dwCookie)
+        {
+            throw new NotImplementedException();
+        }
+
+        public int StartBuild(IVsOutputWindowPane pIVsOutputWindowPane, uint dwOptions)
+        {
+            throw new NotImplementedException();
+        }
+
+        public int StartClean(IVsOutputWindowPane pIVsOutputWindowPane, uint dwOptions)
+        {
+            throw new NotImplementedException();
+        }
+
+        public int StartUpToDateCheck(IVsOutputWindowPane pIVsOutputWindowPane, uint dwOptions)
+        {
+            throw new NotImplementedException();
+        }
+
+        public int QueryStatus(out int pfBuildDone)
+        {
+            throw new NotImplementedException();
+        }
+
+        public int Stop(int fSync)
+        {
+            throw new NotImplementedException();
+        }
+
+        public int Wait(uint dwMilliseconds, int fTickWhenMessageQNotEmpty)
+        {
+            throw new NotImplementedException();
+        }
+
+        public int QueryStartBuild(uint dwOptions, int[] pfSupported, int[] pfReady)
+        {
+            throw new NotImplementedException();
+        }
+
+        public int QueryStartClean(uint dwOptions, int[] pfSupported, int[] pfReady)
+        {
+//            var dte = (DTE2)Marshal.GetActiveObject("VisualStudio.DTE.14.0");
+
+            var dte = project.Package.GetGlobalService<SDTE>() as DTE2;
+            var configuration = dte.Solution.SolutionBuild.ActiveConfiguration;
+            var dteProject = GetDTEProject(project);
+            var dir = Path.Combine(dteProject.FullName, dteProject.ConfigurationManager.ActiveConfiguration.Properties.Item("OutputPath").Value.ToString());
+
+//            var builtGroup = dteProject.ConfigurationManager.ActiveConfiguration.OutputGroups.OfType<EnvDTE.OutputGroup>().First(x => x.CanonicalName == "Built");
+
+            return VSConstants.S_OK;
+        }
+
+        public static EnvDTE.Project GetDTEProject(IVsHierarchy hierarchy)
+        {
+            if (hierarchy == null)
+                throw new ArgumentNullException("hierarchy");
+
+            object obj;
+            hierarchy.GetProperty(VSConstants.VSITEMID_ROOT, (int)__VSHPROPID.VSHPROPID_ExtObject, out obj);
+            return obj as EnvDTE.Project;
+        }
+
+        public int QueryStartUpToDateCheck(uint dwOptions, int[] pfSupported, int[] pfReady)
+        {
+            throw new NotImplementedException();
+        }
     }
 }

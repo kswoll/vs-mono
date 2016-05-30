@@ -8,24 +8,26 @@ namespace MonoProgram.Package.Projects
 {
     public class MonoProgramProjectFlavor : FlavoredProjectBase, IVsProjectFlavorCfgProvider
     {
-        private MonoProgramPackage package;
+        public MonoProgramPackage Package { get; }
+
         private IVsProjectFlavorCfgProvider innerCfgProvider;
 
         public MonoProgramProjectFlavor(MonoProgramPackage package)
         {
-            this.package = package;
+            Package = package;
         }
 
         protected override void SetInnerProject(IntPtr innerIUnknown)
         {
             // This line has to be called before the base invocation or you'll get an error complaining that the serviceProvider
             // must have been set first.
-            serviceProvider = package;
+            serviceProvider = Package;
 
             base.SetInnerProject(innerIUnknown);
 
             var objectForIUnknown = Marshal.GetObjectForIUnknown(innerIUnknown);
             innerCfgProvider = (IVsProjectFlavorCfgProvider)objectForIUnknown;
+
         }
 
         /// <summary>

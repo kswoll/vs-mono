@@ -1,6 +1,8 @@
 ﻿using System.Diagnostics.CodeAnalysis;
 using System.Runtime.InteropServices;
+using EnvDTE80;
 using Microsoft.VisualStudio.Shell;
+using Microsoft.VisualStudio.Shell.Interop;
 using MonoProgram.Package.Projects;
 
 namespace MonoProgram.Package
@@ -26,6 +28,11 @@ namespace MonoProgram.Package
             base.Initialize();
 
             RegisterProjectFactory(new MonoProgramProjectFactory(this));
+        }
+
+        public T GetGlobalService<T>()
+        {
+            return (T)GetService(typeof(T));
         }
     }
 }

@@ -4,7 +4,7 @@
         <Name>MonoProgramProjectSubType</Name>
         <Author>Kirk Woll</Author>
         <Version>1.0</Version>
-        <Description xml:space="preserve">Empty VSIX Project.</Description>
+        <Description xml:space="preserve">Mono Program Project</Description>
         <Locale>1033</Locale>
         <SupportedProducts>
             <VisualStudio Version="10.0">
