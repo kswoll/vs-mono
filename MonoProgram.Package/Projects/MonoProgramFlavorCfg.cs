@@ -396,18 +396,26 @@ namespace MonoProgram.Package.Projects
 
         public int StartBuild(IVsOutputWindowPane outputPane, uint dwOptions)
         {
-            outputPane.OutputString("Starting build...\r\n");
-            var script = @"cd /mnt/c/dev/TestDebug/TestDebug
+            var dte = project.Package.GetGlobalService<SDTE>() as DTE2;
+            var configuration = dte.Solution.SolutionBuild.ActiveConfiguration;
+            var dteProject = GetDTEProject(project);
+            var projectFolder = dteProject.FullName;
+            var bashProjectFolder = ConvertToUnixPath(projectFolder);
+//            var dir = Path.Combine(dteProject.FullName, dteProject.ConfigurationManager.ActiveConfiguration.Properties.Item("OutputPath").Value.ToString());
+
+            outputPane.OutputString($"Starting build of {projectFolder}...\r\n");
+            var script = $@"cd {bashProjectFolder}
 xbuild
 exit
 ".Replace("\r\n", "\n");
-            var bash = @"c:\Windows\Sysnative\bash.exe";
+            var bash = Path.Combine(Environment.SystemDirectory, "Sysnative", "bash.exe");
+//            var bash = @"c:\Windows\Sysnative\bash.exe";
             var tempFile = Path.GetTempFileName();
             var arguments = $"--init-file {ConvertToUnixPath(tempFile)}";
             File.WriteAllText(tempFile, script);
             var process = System.Diagnostics.Process.Start(bash, arguments);
             process.WaitForExit();
-            outputPane.OutputString("Done building\r\n");
+            outputPane.OutputString("Build complete\r\n");
 
             return VSConstants.S_OK;
         }
@@ -459,10 +467,10 @@ exit
         {
 //            var dte = (DTE2)Marshal.GetActiveObject("VisualStudio.DTE.14.0");
 
-            var dte = project.Package.GetGlobalService<SDTE>() as DTE2;
-            var configuration = dte.Solution.SolutionBuild.ActiveConfiguration;
-            var dteProject = GetDTEProject(project);
-            var dir = Path.Combine(dteProject.FullName, dteProject.ConfigurationManager.ActiveConfiguration.Properties.Item("OutputPath").Value.ToString());
+//            var dte = project.Package.GetGlobalService<SDTE>() as DTE2;
+//            var configuration = dte.Solution.SolutionBuild.ActiveConfiguration;
+//            var dteProject = GetDTEProject(project);
+//            var dir = Path.Combine(dteProject.FullName, dteProject.ConfigurationManager.ActiveConfiguration.Properties.Item("OutputPath").Value.ToString());
 
 //            var builtGroup = dteProject.ConfigurationManager.ActiveConfiguration.OutputGroups.OfType<EnvDTE.OutputGroup>().First(x => x.CanonicalName == "Built");
 
