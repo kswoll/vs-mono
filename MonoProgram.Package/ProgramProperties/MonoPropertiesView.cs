@@ -6,12 +6,7 @@ namespace MonoProgram.Package.ProgramProperties
     [Guid("3DE15C6B-2C7F-416C-B496-7D76A64A5247")]
     public partial class MonoPropertiesView : PageView
     {
-        public const string HostProperty = "HostProperty";
-        public const string UsernameProperty = "UsernameProperty";
-        public const string PasswordProperty = "PasswordProperty";
-        public const string DestinationProperty = "DestinationProperty";
-
-		private PropertyControlTable propertyControlTable;
+        private PropertyControlTable propertyControlTable;
 
         public MonoPropertiesView()
         {
@@ -49,10 +44,10 @@ namespace MonoProgram.Package.ProgramProperties
                     }
 
                     // Add two Property Name / Control KeyValuePairs. 
-					propertyControlTable.Add(HostProperty, hostTextBox);
-                    propertyControlTable.Add(UsernameProperty, usernameTextBox);
-				    propertyControlTable.Add(PasswordProperty, passwordTextBox);
-				    propertyControlTable.Add(DestinationProperty, destinationTextBox);
+					propertyControlTable.Add(MonoPropertyPage.HostProperty, hostTextBox);
+                    propertyControlTable.Add(MonoPropertyPage.UsernameProperty, usernameTextBox);
+				    propertyControlTable.Add(MonoPropertyPage.PasswordProperty, passwordTextBox);
+				    propertyControlTable.Add(MonoPropertyPage.DestinationProperty, destinationTextBox);
 				}
 				return propertyControlTable;
 			}

@@ -13,6 +13,7 @@ using Microsoft.VisualStudio;
 using Microsoft.VisualStudio.OLE.Interop;
 using Microsoft.VisualStudio.Shell.Interop;
 using MonoProgram.Package.Debuggers;
+using MonoProgram.Package.ProgramProperties;
 
 namespace MonoProgram.Package.Projects
 {
@@ -380,17 +381,9 @@ namespace MonoProgram.Package.Projects
 
 	    public int DebugLaunch(uint grfLaunch)
 	    {
-            var dte = project.Package.GetGlobalService<SDTE>() as DTE2;
-            var configuration = dte.Solution.SolutionBuild.ActiveConfiguration;
             var dteProject = GetDTEProject(project);
             var projectFolder = Path.GetDirectoryName(dteProject.FullName);
-            var bashProjectFolder = ConvertToUnixPath(projectFolder);
 	        var projectConfiguration = dteProject.ConfigurationManager.ActiveConfiguration;
-	        var builder = new StringBuilder();
-	        for (var i = 1; i <= dteProject.Properties.Count; i++)
-	        {
-	            builder.AppendLine(dteProject.Properties.Item(i).Name);
-	        }
 	        var dir = Path.GetDirectoryName(Path.Combine(projectFolder, projectConfiguration.Properties.Item("OutputPath").Value.ToString()));
 	        var fileName = dteProject.Properties.Item("OutputFileName").Value.ToString();
 	        var outputFile = Path.Combine(dir, fileName);
@@ -400,6 +393,8 @@ namespace MonoProgram.Package.Projects
 	        debugTargets[0].LaunchFlags = grfLaunch;
             debugTargets[0].dlo = (uint)DEBUG_LAUNCH_OPERATION.DLO_CreateProcess;
             debugTargets[0].bstrExe = outputFile;
+	        debugTargets[0].bstrCurDir = this[MonoPropertyPage.DestinationProperty];
+	        debugTargets[0].bstrOptions = $"{this[MonoPropertyPage.UsernameProperty]}:{this[MonoPropertyPage.PasswordProperty]}@{this[MonoPropertyPage.HostProperty]}";
             debugTargets[0].guidLaunchDebugEngine = new Guid(Guids.EngineId);
 
             var processInfo = new VsDebugTargetProcessInfo[debugTargets.Length];
@@ -490,7 +485,7 @@ exit
 
         public int StartClean(IVsOutputWindowPane pIVsOutputWindowPane, uint dwOptions)
         {
-            throw new NotImplementedException();
+            return VSConstants.S_OK;
         }
 
         public int StartUpToDateCheck(IVsOutputWindowPane outputPane, uint dwOptions)

@@ -1,13 +1,18 @@
 ﻿using System;
+using System.IO;
 using System.Linq;
 using System.Net;
 using System.Runtime.InteropServices;
+using System.Threading;
+using System.Threading.Tasks;
 using Microsoft.VisualStudio;
 using Microsoft.VisualStudio.Debugger.Interop;
+using Microsoft.VisualStudio.Shell.Interop;
 using Mono.Debugging.Client;
 using Mono.Debugging.Soft;
 using MonoProgram.Package.Debuggers.Events;
 using MonoProgram.Package.Utils;
+using Renci.SshNet;
 
 namespace MonoProgram.Package.Debuggers
 {
@@ -23,6 +28,10 @@ namespace MonoProgram.Package.Debuggers
         private AD_PROCESS_ID processId;
         private readonly MonoBreakpointManager breakpointManager;
         private readonly MonoThreadManager threadManager;
+        private AutoResetEvent waiter;
+        private string host;
+        private SshClient sshClient;
+        private SshCommand runCommand;
 
         public MonoEngine()
         {
@@ -366,25 +375,78 @@ namespace MonoProgram.Package.Debuggers
 
         public int LaunchSuspended(string server, IDebugPort2 port, string exe, string args, string directory, string environment, string options, enum_LAUNCH_FLAGS launchFlags, uint standardInput, uint standardOutput, uint standardError, IDebugEventCallback2 callback, out IDebugProcess2 process)
         {
-            processId = new AD_PROCESS_ID();
-            processId.ProcessIdType = (uint)enum_AD_PROCESS_ID.AD_PROCESS_ID_GUID;
-            processId.guidProcessId = Guid.NewGuid();
+            waiter = new AutoResetEvent(false);
+            Task.Run(() =>
+            {
+                var credentialsAndHost = options.Split('@');
+                host = credentialsAndHost[1];
+                var usernameAndPassword = credentialsAndHost[0].Split(':');
+                var username = usernameAndPassword[0];
+                var password = usernameAndPassword[1];
 
-            EngineUtils.CheckOk(port.GetProcess(processId, out process));
-            this.Callback = callback;
+                var outputWindow = (IVsOutputWindow)Microsoft.VisualStudio.Shell.Package.GetGlobalService(typeof(SVsOutputWindow));
+                Guid generalPaneGuid = VSConstants.GUID_OutWindowDebugPane;
+                IVsOutputWindowPane pane;
+                outputWindow.GetPane(ref generalPaneGuid, out pane);
+
+                // Upload the contents of the output folder to the target directory
+    //            using (var client = new ScpClient(host, username, password))
+                using (var client = new SftpClient(host, username, password))
+                {
+                    pane.OutputString("Uploading program...\r\n");
+                    client.Connect();
+
+                    // Ensure target directory exists:
+                    var targetDirectories = directory.Split('/');
+                    foreach (var part in targetDirectories)
+                    {
+                        if (!client.Exists(part))
+                            client.CreateDirectory(part);
+                        client.ChangeDirectory(part);
+                    }
+                    foreach (var _ in targetDirectories)
+                    {
+                        client.ChangeDirectory("..");
+                    }
+
+                    var outputDirectory = new DirectoryInfo(Path.GetDirectoryName(exe));
+                    foreach (var file in outputDirectory.EnumerateFiles().Where(x => x.Extension == ".dll" || x.Extension == ".mdb" || x.Extension == ".exe"))
+                    {
+                        pane.OutputString($"Uploading {file.FullName}...\r\n");
+                        using (var stream = file.OpenRead())
+                        {
+                            client.UploadFile(stream, $"{directory}/{file.Name}", true);
+                        }
+                    }
+                    client.Disconnect();
+                    Console.WriteLine("Done");
+                }
+
+                var targetExe = directory + "/" + Path.GetFileName(exe);
+                sshClient = new SshClient(host, username, password);
+                sshClient.Connect();
+                runCommand = sshClient.CreateCommand($"mono --debug=mdb-optimizations --debugger-agent=transport=dt_socket,address=0.0.0.0:6438,server=y {targetExe}");
+                runCommand.BeginExecute(ar =>
+                {
+                    sshClient.Disconnect();
+                    sshClient.Dispose();
+                });
+                Task.Run(() =>
+                {
+                    using (var reader = new StreamReader(runCommand.OutputStream))
+                    {
+                        var line = reader.ReadLine();
+                        pane.OutputString(line + "\r\n");
+                    }
+                });
+                waiter.Set();
+            });
 
             Session = new SoftDebuggerSession();
             Session.TargetReady += (sender, eventArgs) =>
             {
                 var activeThread = Session.ActiveThread;
                 threadManager.Add(activeThread, new MonoThread(this, activeThread));
-/*
-                Session.Stop();
-                var location = activeThread.Location;
-                var backtrace = activeThread.Backtrace;
-                var locations = Session.VirtualMachine.RootDomain.GetAssemblies().Select(x => x.Location).ToArray();
-                Session.Continue();
-*/
 
                 MonoEngineCreateEvent.Send(this);
                 MonoProgramCreateEvent.Send(this);                
@@ -407,6 +469,13 @@ namespace MonoProgram.Package.Debuggers
                 var pendingBreakpoint = breakpointManager[breakpoint];
                 Send(new MonoBreakpointEvent(new MonoBoundBreakpointsEnum(pendingBreakpoint.BoundBreakpoints)), MonoBreakpointEvent.IID, threadManager[x.Thread]);
             };
+
+            processId = new AD_PROCESS_ID();
+            processId.ProcessIdType = (uint)enum_AD_PROCESS_ID.AD_PROCESS_ID_GUID;
+            processId.guidProcessId = Guid.NewGuid();
+
+            EngineUtils.CheckOk(port.GetProcess(processId, out process));
+            Callback = callback;
 
             return VSConstants.S_OK;
         }
@@ -437,8 +506,14 @@ namespace MonoProgram.Package.Debuggers
 
             EngineUtils.RequireOk(program.GetProgramId(out programId));
 
-            Session.Run(new SoftDebuggerStartInfo(new SoftDebuggerConnectArgs("", new IPAddress(new byte[] { 192, 168, 137, 3 }), 12345)), 
-                new DebuggerSessionOptions { EvaluationOptions = EvaluationOptions.DefaultOptions, ProjectAssembliesOnly = false });
+            Task.Run(() =>
+            {
+                waiter.WaitOne();
+
+                var ipAddress = Dns.GetHostEntry(host).AddressList.First();
+                Session.Run(new SoftDebuggerStartInfo(new SoftDebuggerConnectArgs("", ipAddress, 6438)), 
+                    new DebuggerSessionOptions { EvaluationOptions = EvaluationOptions.DefaultOptions, ProjectAssembliesOnly = false });
+            });
 
             return VSConstants.S_OK;
         }
