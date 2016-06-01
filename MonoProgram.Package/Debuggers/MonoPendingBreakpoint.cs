@@ -12,6 +12,7 @@ namespace MonoProgram.Package.Debuggers
     {
         public MonoBoundBreakpoint[] BoundBreakpoints => boundBreakpoints.ToArray();
 
+        private readonly MonoDebuggerSettings settings;
         private readonly MonoBreakpointManager breakpointManager;
         private readonly IDebugBreakpointRequest2 request;
         private readonly BP_REQUEST_INFO requestInfo; 
@@ -20,8 +21,9 @@ namespace MonoProgram.Package.Debuggers
         private bool isDeleted;
         private bool isEnabled;
 
-        public MonoPendingBreakpoint(MonoBreakpointManager breakpointManager, IDebugBreakpointRequest2 request)
+        public MonoPendingBreakpoint(MonoDebuggerSettings settings, MonoBreakpointManager breakpointManager, IDebugBreakpointRequest2 request)
         {
+            this.settings = settings;
             this.breakpointManager = breakpointManager;
             this.request = request;
 
@@ -47,10 +49,9 @@ namespace MonoProgram.Package.Debuggers
             string documentName;
             EngineUtils.CheckOk(docPosition.GetFileName(out documentName));
 
-            // Remap document name  TODO: Implement this properly
-            const string localRoot = @"C:/dev/TestDebug/TestDebug";
+            var localRoot = settings.SourceRoot;
             documentName = documentName.Replace('\\', '/');
-            const string remoteRoot = @"/mnt/c/dev/TestDebug/TestDebug";
+            var remoteRoot = settings.BuildRoot;
             documentName = remoteRoot + documentName.Substring(localRoot.Length);
 
             var startPosition = new TEXT_POSITION[1];

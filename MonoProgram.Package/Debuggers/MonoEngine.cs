@@ -29,14 +29,20 @@ namespace MonoProgram.Package.Debuggers
         private readonly MonoBreakpointManager breakpointManager;
         private readonly MonoThreadManager threadManager;
         private AutoResetEvent waiter;
-        private string host;
-        private SshClient sshClient;
+        private MonoDebuggerSettings settings;
         private SshCommand runCommand;
+        private Connection connection;
+        private IVsOutputWindowPane outputWindow;
 
         public MonoEngine()
         {
             breakpointManager = new MonoBreakpointManager(this);
             threadManager = new MonoThreadManager(this);
+        }
+
+        ~MonoEngine()
+        {
+            runCommand?.Dispose();
         }
 
         public int EnumPrograms(out IEnumDebugPrograms2 ppEnum)
@@ -46,7 +52,7 @@ namespace MonoProgram.Package.Debuggers
 
         public int CreatePendingBreakpoint(IDebugBreakpointRequest2 request, out IDebugPendingBreakpoint2 pendingBreakpoint)
         {
-            pendingBreakpoint = new MonoPendingBreakpoint(breakpointManager, request);
+            pendingBreakpoint = new MonoPendingBreakpoint(settings, breakpointManager, request);
 
             return VSConstants.S_OK;
         }
@@ -373,72 +379,82 @@ namespace MonoProgram.Package.Debuggers
             return VSConstants.S_OK;
         }
 
+        public void Log(string message)
+        {
+            outputWindow.OutputString(message + "\r\n");
+        }
+
         public int LaunchSuspended(string server, IDebugPort2 port, string exe, string args, string directory, string environment, string options, enum_LAUNCH_FLAGS launchFlags, uint standardInput, uint standardOutput, uint standardError, IDebugEventCallback2 callback, out IDebugProcess2 process)
         {
             waiter = new AutoResetEvent(false);
+            settings = MonoDebuggerSettings.Parse(options);
+
             Task.Run(() =>
             {
-                var credentialsAndHost = options.Split('@');
-                host = credentialsAndHost[1];
-                var usernameAndPassword = credentialsAndHost[0].Split(':');
-                var username = usernameAndPassword[0];
-                var password = usernameAndPassword[1];
-
                 var outputWindow = (IVsOutputWindow)Microsoft.VisualStudio.Shell.Package.GetGlobalService(typeof(SVsOutputWindow));
-                Guid generalPaneGuid = VSConstants.GUID_OutWindowDebugPane;
-                IVsOutputWindowPane pane;
-                outputWindow.GetPane(ref generalPaneGuid, out pane);
+                var generalPaneGuid = VSConstants.GUID_OutWindowDebugPane;
+                outputWindow.GetPane(ref generalPaneGuid, out this.outputWindow);
 
                 // Upload the contents of the output folder to the target directory
-    //            using (var client = new ScpClient(host, username, password))
-                using (var client = new SftpClient(host, username, password))
+                if (connection == null)
                 {
-                    pane.OutputString("Uploading program...\r\n");
-                    client.Connect();
-
-                    // Ensure target directory exists:
-                    var targetDirectories = directory.Split('/');
-                    foreach (var part in targetDirectories)
+                    connection = ConnectionManager.Get(settings);
+                    if (!connection.IsConnected)
                     {
-                        if (!client.Exists(part))
-                            client.CreateDirectory(part);
-                        client.ChangeDirectory(part);
+                        Log("Connecting SSH and SFTP...");
+                        connection.Connect();
+                        Log("Connected");
                     }
-                    foreach (var _ in targetDirectories)
-                    {
-                        client.ChangeDirectory("..");
-                    }
-
-                    var outputDirectory = new DirectoryInfo(Path.GetDirectoryName(exe));
-                    foreach (var file in outputDirectory.EnumerateFiles().Where(x => x.Extension == ".dll" || x.Extension == ".mdb" || x.Extension == ".exe"))
-                    {
-                        pane.OutputString($"Uploading {file.FullName}...\r\n");
-                        using (var stream = file.OpenRead())
-                        {
-                            client.UploadFile(stream, $"{directory}/{file.Name}", true);
-                        }
-                    }
-                    client.Disconnect();
-                    Console.WriteLine("Done");
                 }
 
+                Log("Uploading program...");
+
+                // Ensure target directory exists:
+                var targetDirectories = directory.Split('/');
+                foreach (var part in targetDirectories)
+                {
+                    if (!connection.Sftp.Exists(part))
+                        connection.Sftp.CreateDirectory(part);
+                    connection.Sftp.ChangeDirectory(part);
+                }
+                foreach (var _ in targetDirectories)
+                {
+                    connection.Sftp.ChangeDirectory("..");
+                }
+
+                var outputDirectory = new DirectoryInfo(Path.GetDirectoryName(exe));
+                foreach (var file in outputDirectory.EnumerateFiles().Where(x => x.Extension == ".dll" || x.Extension == ".mdb" || x.Extension == ".exe"))
+                {
+                    using (var stream = file.OpenRead())
+                    {
+                        connection.Sftp.UploadFile(stream, $"{directory}/{file.Name}", true);
+                    }
+                    Log($"Uploaded {file.FullName}");
+                }
+                Log("Done");
+
                 var targetExe = directory + "/" + Path.GetFileName(exe);
-                sshClient = new SshClient(host, username, password);
-                sshClient.Connect();
-                runCommand = sshClient.CreateCommand($"mono --debug=mdb-optimizations --debugger-agent=transport=dt_socket,address=0.0.0.0:6438,server=y {targetExe}");
+                connection.Ssh.RunCommand("cd ~");
+                Log("Launching application");
+                runCommand = connection.Ssh.CreateCommand($"mono --debug=mdb-optimizations --debugger-agent=transport=dt_socket,address=0.0.0.0:6438,server=y {targetExe}");
                 runCommand.BeginExecute(ar =>
                 {
-                    sshClient.Disconnect();
-                    sshClient.Dispose();
+// Persistent connection
+//                    sshClient.Disconnect();
+//                    sshClient.Dispose();
                 });
+
+                // Pipe standard out of the launched program to the output window in Visual Studio
                 Task.Run(() =>
                 {
                     using (var reader = new StreamReader(runCommand.OutputStream))
                     {
                         var line = reader.ReadLine();
-                        pane.OutputString(line + "\r\n");
+                        Log(line);
                     }
                 });
+
+                // Trigger that the app is now running for whomever might be waiting for that signal
                 waiter.Set();
             });
 
@@ -510,7 +526,7 @@ namespace MonoProgram.Package.Debuggers
             {
                 waiter.WaitOne();
 
-                var ipAddress = Dns.GetHostEntry(host).AddressList.First();
+                var ipAddress = Dns.GetHostEntry(settings.Host).AddressList.First();
                 Session.Run(new SoftDebuggerStartInfo(new SoftDebuggerConnectArgs("", ipAddress, 6438)), 
                     new DebuggerSessionOptions { EvaluationOptions = EvaluationOptions.DefaultOptions, ProjectAssembliesOnly = false });
             });

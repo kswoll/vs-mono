@@ -51,6 +51,8 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="Debuggers\Connection.cs" />
+    <Compile Include="Debuggers\ConnectionManager.cs" />
     <Compile Include="Debuggers\CustomLogger.cs" />
     <Compile Include="Debuggers\DebuggerGuids.cs" />
     <Compile Include="Debuggers\Enumerator.cs" />
@@ -74,6 +76,7 @@
     <Compile Include="Debuggers\MonoCallbackExtensions.cs" />
     <Compile Include="Debuggers\MonoCallbackWrapper.cs" />
     <Compile Include="Debuggers\MonoCodeContextEnum.cs" />
+    <Compile Include="Debuggers\MonoDebuggerSettings.cs" />
     <Compile Include="Debuggers\MonoDocumentContext.cs" />
     <Compile Include="Debuggers\MonoEngine.cs" />
     <Compile Include="Debuggers\MonoExpression.cs" />

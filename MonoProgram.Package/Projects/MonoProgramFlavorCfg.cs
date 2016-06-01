@@ -388,13 +388,17 @@ namespace MonoProgram.Package.Projects
 	        var fileName = dteProject.Properties.Item("OutputFileName").Value.ToString();
 	        var outputFile = Path.Combine(dir, fileName);
 
+	        var sourceRoot = projectFolder;
+	        var buildRoot = ConvertToUnixPath(sourceRoot);
+            var settings = new MonoDebuggerSettings(this[MonoPropertyPage.HostProperty], this[MonoPropertyPage.UsernameProperty], this[MonoPropertyPage.PasswordProperty], sourceRoot, buildRoot);
+
             var debugger = (IVsDebugger4)project.Package.GetGlobalService<IVsDebugger>();
             var debugTargets = new VsDebugTargetInfo4[1];
 	        debugTargets[0].LaunchFlags = grfLaunch;
             debugTargets[0].dlo = (uint)DEBUG_LAUNCH_OPERATION.DLO_CreateProcess;
             debugTargets[0].bstrExe = outputFile;
 	        debugTargets[0].bstrCurDir = this[MonoPropertyPage.DestinationProperty];
-	        debugTargets[0].bstrOptions = $"{this[MonoPropertyPage.UsernameProperty]}:{this[MonoPropertyPage.PasswordProperty]}@{this[MonoPropertyPage.HostProperty]}";
+	        debugTargets[0].bstrOptions = settings.ToString();
             debugTargets[0].guidLaunchDebugEngine = new Guid(Guids.EngineId);
 
             var processInfo = new VsDebugTargetProcessInfo[debugTargets.Length];

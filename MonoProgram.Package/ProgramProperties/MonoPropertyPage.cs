@@ -11,6 +11,8 @@ namespace MonoProgram.Package.ProgramProperties
         public const string UsernameProperty = "UsernameProperty";
         public const string PasswordProperty = "PasswordProperty";
         public const string DestinationProperty = "DestinationProperty";
+        public const string SourceRootProperty = "SourceRoot";
+        public const string BuildRootProperty = "BuildRoot";
 
         protected override string HelpKeyword => string.Empty;
 		public override string Title => "Mono";
