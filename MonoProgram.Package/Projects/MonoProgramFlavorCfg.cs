@@ -2,18 +2,15 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
-using System.Linq;
 using System.Runtime.InteropServices;
-using System.Text;
-using System.Threading.Tasks;
 using System.Xml;
 using EnvDTE;
-using EnvDTE80;
 using Microsoft.VisualStudio;
 using Microsoft.VisualStudio.OLE.Interop;
 using Microsoft.VisualStudio.Shell.Interop;
 using MonoProgram.Package.Debuggers;
 using MonoProgram.Package.ProgramProperties;
+using MonoProgram.Package.Utils;
 
 namespace MonoProgram.Package.Projects
 {
@@ -29,7 +26,6 @@ namespace MonoProgram.Package.Projects
         private readonly IVsCfg baseProjectCfg;
         private readonly IVsProjectFlavorCfg innerProjectFlavorCfg;
         private readonly IVsDebuggableProjectCfg baseDebugConfiguration;
-//        private readonly IVsBuildableProjectCfg baseBuildConfiguration;
         private readonly Dictionary<string, string> propertiesList = new Dictionary<string, string>();
 
         private bool isClosed;
@@ -388,8 +384,8 @@ namespace MonoProgram.Package.Projects
 	        var fileName = dteProject.Properties.Item("OutputFileName").Value.ToString();
 	        var outputFile = Path.Combine(dir, fileName);
 
-	        var sourceRoot = projectFolder;
-	        var buildRoot = ConvertToUnixPath(sourceRoot);
+	        var sourceRoot = this[MonoPropertyPage.SourceRootProperty].NullIfEmpty() ?? projectFolder;
+	        var buildRoot = this[MonoPropertyPage.BuildRootProperty].NullIfEmpty() ?? ConvertToUnixPath(sourceRoot);
             var settings = new MonoDebuggerSettings(this[MonoPropertyPage.HostProperty], this[MonoPropertyPage.UsernameProperty], this[MonoPropertyPage.PasswordProperty], sourceRoot, buildRoot);
 
             var debugger = (IVsDebugger4)project.Package.GetGlobalService<IVsDebugger>();
@@ -403,12 +399,6 @@ namespace MonoProgram.Package.Projects
 
             var processInfo = new VsDebugTargetProcessInfo[debugTargets.Length];
             debugger.LaunchDebugTargets4(1, debugTargets, processInfo);
-
-//            var outputWindow = (IVsOutputWindow)project.Package.GetGlobalService<SVsOutputWindow>();
-//            Guid generalPaneGuid = VSConstants.GUID_OutWindowGeneralPane;
-//            IVsOutputWindowPane pane;
-//            outputWindow.GetPane(ref generalPaneGuid, out pane);
-//            pane.OutputString("Test writing to the output window");
 
 	        return VSConstants.S_OK;
 	    }
@@ -439,12 +429,9 @@ namespace MonoProgram.Package.Projects
 
         public int StartBuild(IVsOutputWindowPane outputPane, uint dwOptions)
         {
-            var dte = project.Package.GetGlobalService<SDTE>() as DTE2;
-            var configuration = dte.Solution.SolutionBuild.ActiveConfiguration;
             var dteProject = GetDTEProject(project);
             var projectFolder = Path.GetDirectoryName(dteProject.FullName);
             var bashProjectFolder = ConvertToUnixPath(projectFolder);
-//            var dir = Path.Combine(dteProject.FullName, dteProject.ConfigurationManager.ActiveConfiguration.Properties.Item("OutputPath").Value.ToString());
 
             outputPane.OutputString($"Starting build of {projectFolder}...\r\n");
             var outputFile = Path.GetTempFileName();
@@ -524,15 +511,6 @@ exit
 
         public int QueryStartClean(uint dwOptions, int[] pfSupported, int[] pfReady)
         {
-//            var dte = (DTE2)Marshal.GetActiveObject("VisualStudio.DTE.14.0");
-
-//            var dte = project.Package.GetGlobalService<SDTE>() as DTE2;
-//            var configuration = dte.Solution.SolutionBuild.ActiveConfiguration;
-//            var dteProject = GetDTEProject(project);
-//            var dir = Path.Combine(dteProject.FullName, dteProject.ConfigurationManager.ActiveConfiguration.Properties.Item("OutputPath").Value.ToString());
-
-//            var builtGroup = dteProject.ConfigurationManager.ActiveConfiguration.OutputGroups.OfType<EnvDTE.OutputGroup>().First(x => x.CanonicalName == "Built");
-
             pfSupported[0] = 1;
             return VSConstants.S_OK;
         }
@@ -540,11 +518,11 @@ exit
         public static Project GetDTEProject(IVsHierarchy hierarchy)
         {
             if (hierarchy == null)
-                throw new ArgumentNullException("hierarchy");
+                throw new ArgumentNullException(nameof(hierarchy));
 
             object obj;
             hierarchy.GetProperty(VSConstants.VSITEMID_ROOT, (int)__VSHPROPID.VSHPROPID_ExtObject, out obj);
-            return obj as EnvDTE.Project;
+            return obj as Project;
         }
 
         public int QueryStartUpToDateCheck(uint dwOptions, int[] pfSupported, int[] pfReady)

@@ -50,6 +50,8 @@ namespace MonoProgram.Package.ProgramProperties
 				    propertyControlTable.Add(MonoPropertyPage.DestinationProperty, destinationTextBox);
 				    propertyControlTable.Add(MonoPropertyPage.SourceRootProperty, sourceRootTextBox);
 				    propertyControlTable.Add(MonoPropertyPage.BuildRootProperty, buildRootTextBox);
+				    propertyControlTable.Add(MonoPropertyPage.BuildServerProperty, buildServerTextBox);
+				    propertyControlTable.Add(MonoPropertyPage.BuildFolderProperty, buildFolderTextBox);
 				}
 				return propertyControlTable;
 			}

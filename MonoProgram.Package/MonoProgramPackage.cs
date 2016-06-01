@@ -16,7 +16,7 @@ namespace MonoProgram.Package
     [ProvideObject(typeof(MonoPropertyPage), RegisterUsing = RegistrationMethod.CodeBase)]
     [ProvideProjectFactory(typeof(MonoProgramProjectFactory), "MonoProgram", null, null, null, @"..\Templates\Projects")]
     [SuppressMessage("StyleCop.CSharp.DocumentationRules", "SA1650:ElementDocumentationMustBeSpelledCorrectly", Justification = "pkgdef, VS and vsixmanifest are valid VS terms")]
-    [ProvideDebugEngine("Mono Debug Engine", typeof(MonoProgramProvider), typeof(MonoEngine), Guids.EngineId, false, false, false)]
+    [ProvideDebugEngine("Mono Debug Engine", typeof(MonoProgramProvider), typeof(MonoEngine), Guids.EngineId, true, true, false)]
     public sealed class MonoProgramPackage : Microsoft.VisualStudio.Shell.Package
     {
         /// <summary>

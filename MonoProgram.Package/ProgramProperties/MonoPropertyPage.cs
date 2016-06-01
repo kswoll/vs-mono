@@ -13,6 +13,8 @@ namespace MonoProgram.Package.ProgramProperties
         public const string DestinationProperty = "DestinationProperty";
         public const string SourceRootProperty = "SourceRoot";
         public const string BuildRootProperty = "BuildRoot";
+        public const string BuildServerProperty = "BuildServerProperty";
+        public const string BuildFolderProperty = "BuildFolderProperty";
 
         protected override string HelpKeyword => string.Empty;
 		public override string Title => "Mono";
