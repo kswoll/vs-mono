@@ -9,6 +9,7 @@ namespace MonoProgram.Package.ProgramProperties
         public const string HostProperty = "HostProperty";
         public const string UsernameProperty = "UsernameProperty";
         public const string PasswordProperty = "PasswordProperty";
+        public const string DestinationProperty = "DestinationProperty";
 
 		private PropertyControlTable propertyControlTable;
 
@@ -42,7 +43,7 @@ namespace MonoProgram.Package.ProgramProperties
 
                     // This means that this CustomPropertyPageView object has not been
                     // initialized.
-                    if (string.IsNullOrEmpty(base.Name))
+                    if (string.IsNullOrEmpty(Name))
                     {
                         InitializeComponent();
                     }
@@ -51,6 +52,7 @@ namespace MonoProgram.Package.ProgramProperties
 					propertyControlTable.Add(HostProperty, hostTextBox);
                     propertyControlTable.Add(UsernameProperty, usernameTextBox);
 				    propertyControlTable.Add(PasswordProperty, passwordTextBox);
+				    propertyControlTable.Add(DestinationProperty, destinationTextBox);
 				}
 				return propertyControlTable;
 			}

@@ -34,6 +34,8 @@
             this.usernameTextBox = new System.Windows.Forms.TextBox();
             this.passwordLabel = new System.Windows.Forms.Label();
             this.passwordTextBox = new System.Windows.Forms.TextBox();
+            this.destinationLabel = new System.Windows.Forms.Label();
+            this.destinationTextBox = new System.Windows.Forms.TextBox();
             this.SuspendLayout();
             // 
             // hostLabel
@@ -85,10 +87,28 @@
             this.passwordTextBox.Size = new System.Drawing.Size(482, 31);
             this.passwordTextBox.TabIndex = 5;
             // 
+            // destinationLabel
+            // 
+            this.destinationLabel.AutoSize = true;
+            this.destinationLabel.Location = new System.Drawing.Point(9, 221);
+            this.destinationLabel.Name = "destinationLabel";
+            this.destinationLabel.Size = new System.Drawing.Size(267, 25);
+            this.destinationLabel.TabIndex = 6;
+            this.destinationLabel.Text = "Destination Folder on Host";
+            // 
+            // destinationTextBox
+            // 
+            this.destinationTextBox.Location = new System.Drawing.Point(14, 249);
+            this.destinationTextBox.Name = "destinationTextBox";
+            this.destinationTextBox.Size = new System.Drawing.Size(477, 31);
+            this.destinationTextBox.TabIndex = 7;
+            // 
             // MonoPropertiesView
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(12F, 25F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
+            this.Controls.Add(this.destinationTextBox);
+            this.Controls.Add(this.destinationLabel);
             this.Controls.Add(this.passwordTextBox);
             this.Controls.Add(this.passwordLabel);
             this.Controls.Add(this.usernameTextBox);
@@ -110,5 +130,7 @@
         private System.Windows.Forms.TextBox usernameTextBox;
         private System.Windows.Forms.Label passwordLabel;
         private System.Windows.Forms.TextBox passwordTextBox;
+        private System.Windows.Forms.Label destinationLabel;
+        private System.Windows.Forms.TextBox destinationTextBox;
     }
 }

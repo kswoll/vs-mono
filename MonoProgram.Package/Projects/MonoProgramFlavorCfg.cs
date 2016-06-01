@@ -380,11 +380,26 @@ namespace MonoProgram.Package.Projects
 
 	    public int DebugLaunch(uint grfLaunch)
 	    {
+            var dte = project.Package.GetGlobalService<SDTE>() as DTE2;
+            var configuration = dte.Solution.SolutionBuild.ActiveConfiguration;
+            var dteProject = GetDTEProject(project);
+            var projectFolder = Path.GetDirectoryName(dteProject.FullName);
+            var bashProjectFolder = ConvertToUnixPath(projectFolder);
+	        var projectConfiguration = dteProject.ConfigurationManager.ActiveConfiguration;
+	        var builder = new StringBuilder();
+	        for (var i = 1; i <= dteProject.Properties.Count; i++)
+	        {
+	            builder.AppendLine(dteProject.Properties.Item(i).Name);
+	        }
+	        var dir = Path.GetDirectoryName(Path.Combine(projectFolder, projectConfiguration.Properties.Item("OutputPath").Value.ToString()));
+	        var fileName = dteProject.Properties.Item("OutputFileName").Value.ToString();
+	        var outputFile = Path.Combine(dir, fileName);
+
             var debugger = (IVsDebugger4)project.Package.GetGlobalService<IVsDebugger>();
             var debugTargets = new VsDebugTargetInfo4[1];
 	        debugTargets[0].LaunchFlags = grfLaunch;
             debugTargets[0].dlo = (uint)DEBUG_LAUNCH_OPERATION.DLO_CreateProcess;
-            debugTargets[0].bstrExe = "TestDebug.exe";
+            debugTargets[0].bstrExe = outputFile;
             debugTargets[0].guidLaunchDebugEngine = new Guid(Guids.EngineId);
 
             var processInfo = new VsDebugTargetProcessInfo[debugTargets.Length];
