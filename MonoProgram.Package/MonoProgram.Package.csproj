@@ -51,6 +51,45 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="Debuggers\CustomLogger.cs" />
+    <Compile Include="Debuggers\DebuggerGuids.cs" />
+    <Compile Include="Debuggers\Enumerator.cs" />
+    <Compile Include="Debuggers\Events\AsynchronousEvent.cs" />
+    <Compile Include="Debuggers\Events\BreakpointBoundEvent.cs" />
+    <Compile Include="Debuggers\Events\MonoBreakpointBoundEvent.cs" />
+    <Compile Include="Debuggers\Events\MonoBreakpointEvent.cs" />
+    <Compile Include="Debuggers\Events\MonoEngineCreateEvent.cs" />
+    <Compile Include="Debuggers\Events\MonoExpressionCompleteEvent.cs" />
+    <Compile Include="Debuggers\Events\MonoProgramCreateEvent.cs" />
+    <Compile Include="Debuggers\Events\MonoProgramDestroyEvent.cs" />
+    <Compile Include="Debuggers\Events\MonoStepCompleteEvent.cs" />
+    <Compile Include="Debuggers\Events\MonoStoppingEvent.cs" />
+    <Compile Include="Debuggers\Events\ProgramDestroyEvent.cs" />
+    <Compile Include="Debuggers\Events\SynchronousEvent.cs" />
+    <Compile Include="Debuggers\Guids.cs" />
+    <Compile Include="Debuggers\MonoBoundBreakpoint.cs" />
+    <Compile Include="Debuggers\MonoBoundBreakpointsEnum.cs" />
+    <Compile Include="Debuggers\MonoBreakpointManager.cs" />
+    <Compile Include="Debuggers\MonoBreakpointResolution.cs" />
+    <Compile Include="Debuggers\MonoCallbackExtensions.cs" />
+    <Compile Include="Debuggers\MonoCallbackWrapper.cs" />
+    <Compile Include="Debuggers\MonoCodeContextEnum.cs" />
+    <Compile Include="Debuggers\MonoDocumentContext.cs" />
+    <Compile Include="Debuggers\MonoEngine.cs" />
+    <Compile Include="Debuggers\MonoExpression.cs" />
+    <Compile Include="Debuggers\MonoFrameInfoEnum.cs" />
+    <Compile Include="Debuggers\MonoMemoryAddress.cs" />
+    <Compile Include="Debuggers\MonoPendingBreakpoint.cs" />
+    <Compile Include="Debuggers\MonoProgramNode.cs" />
+    <Compile Include="Debuggers\MonoProgramProvider.cs" />
+    <Compile Include="Debuggers\MonoProperty.cs" />
+    <Compile Include="Debuggers\MonoPropertyEnum.cs" />
+    <Compile Include="Debuggers\MonoPropertyEnumerator.cs" />
+    <Compile Include="Debuggers\MonoPropertyInfoEnum.cs" />
+    <Compile Include="Debuggers\MonoStackFrame.cs" />
+    <Compile Include="Debuggers\MonoThread.cs" />
+    <Compile Include="Debuggers\MonoThreadEnum.cs" />
+    <Compile Include="Debuggers\MonoThreadManager.cs" />
     <Compile Include="MonoProgramPackage.cs" />
     <Compile Include="ProgramProperties\MonoPropertiesStore.cs" />
     <Compile Include="ProgramProperties\MonoPropertiesView.cs">
@@ -76,6 +115,9 @@
     <Compile Include="PropertyPages\PropertyControlTable.cs" />
     <Compile Include="PropertyPages\PropertyPage.cs" />
     <Compile Include="PropertyPages\UserEditCompleteHandler.cs" />
+    <Compile Include="Utils\ComponentException.cs" />
+    <Compile Include="Utils\EngineUtils.cs" />
+    <Compile Include="Utils\ProvideDebugEngineAttribute.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Key.snk" />
@@ -106,6 +148,18 @@
     <Reference Include="Microsoft.CSharp" />
     <Reference Include="Microsoft.VisualStudio.CommandBars, Version=8.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
       <EmbedInteropTypes>False</EmbedInteropTypes>
+    </Reference>
+    <Reference Include="Microsoft.VisualStudio.Debugger.Interop.10.0, Version=10.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
+      <HintPath>..\packages\Microsoft.VisualStudio.Debugger.Interop.10.0.10.0.30319\lib\Microsoft.VisualStudio.Debugger.Interop.10.0.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="Microsoft.VisualStudio.Debugger.Interop.11.0, Version=11.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
+      <HintPath>..\packages\Microsoft.VisualStudio.Debugger.Interop.11.0.11.0.50727\lib\Microsoft.VisualStudio.Debugger.Interop.11.0.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="Microsoft.VisualStudio.Debugger.InteropA, Version=9.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
+      <HintPath>..\packages\Microsoft.VisualStudio.Debugger.InteropA.9.0.21022\lib\Microsoft.VisualStudio.Debugger.InteropA.dll</HintPath>
+      <Private>True</Private>
     </Reference>
     <Reference Include="Microsoft.VisualStudio.Imaging, Version=14.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
       <HintPath>..\packages\Microsoft.VisualStudio.Imaging.14.2.25123\lib\net45\Microsoft.VisualStudio.Imaging.dll</HintPath>
@@ -187,6 +241,21 @@
       <HintPath>..\packages\VSSDK.VSHelp.7.0.4\lib\net20\Microsoft.VisualStudio.VSHelp.dll</HintPath>
       <Private>True</Private>
     </Reference>
+    <Reference Include="Mono.Cecil">
+      <HintPath>..\deps\Mono.Cecil.dll</HintPath>
+    </Reference>
+    <Reference Include="Mono.Cecil.Mdb">
+      <HintPath>..\deps\Mono.Cecil.Mdb.dll</HintPath>
+    </Reference>
+    <Reference Include="Mono.Debugger.Soft">
+      <HintPath>..\deps\Mono.Debugger.Soft.dll</HintPath>
+    </Reference>
+    <Reference Include="Mono.Debugging">
+      <HintPath>..\deps\Mono.Debugging.dll</HintPath>
+    </Reference>
+    <Reference Include="Mono.Debugging.Soft">
+      <HintPath>..\deps\Mono.Debugging.Soft.dll</HintPath>
+    </Reference>
     <Reference Include="Renci.SshNet, Version=2013.4.7.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\packages\SSH.NET.2013.4.7\lib\net40\Renci.SshNet.dll</HintPath>
       <Private>True</Private>
@@ -210,9 +279,7 @@
       <ManifestResourceName>VSPackage</ManifestResourceName>
     </EmbeddedResource>
   </ItemGroup>
-  <ItemGroup>
-    <Folder Include="Debuggers\" />
-  </ItemGroup>
+  <ItemGroup />
   <ItemGroup>
     <ProjectReference Include="..\MonoProgram.Template\MonoProgram.Template.csproj">
       <Project>{39E2F20B-4351-43E7-B137-80719E138050}</Project>

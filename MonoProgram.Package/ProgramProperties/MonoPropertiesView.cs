@@ -49,7 +49,8 @@ namespace MonoProgram.Package.ProgramProperties
 
                     // Add two Property Name / Control KeyValuePairs. 
 					propertyControlTable.Add(HostProperty, hostTextBox);
-//                    propertyControlTable.Add(BooleanPropertyTag, chkBooleanProperty);
+                    propertyControlTable.Add(UsernameProperty, usernameTextBox);
+				    propertyControlTable.Add(PasswordProperty, passwordTextBox);
 				}
 				return propertyControlTable;
 			}

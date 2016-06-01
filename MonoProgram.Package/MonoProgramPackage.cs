@@ -3,8 +3,10 @@ using System.Runtime.InteropServices;
 using EnvDTE80;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
+using MonoProgram.Package.Debuggers;
 using MonoProgram.Package.ProgramProperties;
 using MonoProgram.Package.Projects;
+using MonoProgram.Package.Utils;
 
 namespace MonoProgram.Package
 {
@@ -14,6 +16,7 @@ namespace MonoProgram.Package
     [ProvideObject(typeof(MonoPropertyPage), RegisterUsing = RegistrationMethod.CodeBase)]
     [ProvideProjectFactory(typeof(MonoProgramProjectFactory), "MonoProgram", null, null, null, @"..\Templates\Projects")]
     [SuppressMessage("StyleCop.CSharp.DocumentationRules", "SA1650:ElementDocumentationMustBeSpelledCorrectly", Justification = "pkgdef, VS and vsixmanifest are valid VS terms")]
+    [ProvideDebugEngine("Mono Debug Engine", typeof(MonoProgramProvider), typeof(MonoEngine), Guids.EngineId, false, false, false)]
     public sealed class MonoProgramPackage : Microsoft.VisualStudio.Shell.Package
     {
         /// <summary>

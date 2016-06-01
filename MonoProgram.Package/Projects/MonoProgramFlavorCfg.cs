@@ -12,6 +12,7 @@ using EnvDTE80;
 using Microsoft.VisualStudio;
 using Microsoft.VisualStudio.OLE.Interop;
 using Microsoft.VisualStudio.Shell.Interop;
+using MonoProgram.Package.Debuggers;
 
 namespace MonoProgram.Package.Projects
 {
@@ -44,11 +45,6 @@ namespace MonoProgram.Package.Projects
             IntPtr baseDebugConfigurationPtr;
 		    innerProjectFlavorCfg.get_CfgType(ref debugGuid, out baseDebugConfigurationPtr);
 		    baseDebugConfiguration = (IVsDebuggableProjectCfg)Marshal.GetObjectForIUnknown(baseDebugConfigurationPtr);
-
-//            var buildGuid = typeof(IVsBuildableProjectCfg).GUID;
-//            IntPtr baseBuildConfigurationPtr;
-//            innerProjectFlavorCfg.get_CfgType(ref buildGuid, out baseBuildConfigurationPtr);
-//            baseBuildConfiguration = (IVsBuildableProjectCfg)Marshal.GetObjectForIUnknown(baseBuildConfigurationPtr);
         }
 
         internal static MonoProgramFlavorCfg GetCustomPropertyPageProjectFlavorCfgFromIVsCfg(IVsCfg configuration)
@@ -384,12 +380,29 @@ namespace MonoProgram.Package.Projects
 
 	    public int DebugLaunch(uint grfLaunch)
 	    {
-	        return baseDebugConfiguration.DebugLaunch(grfLaunch);
+            var debugger = (IVsDebugger4)project.Package.GetGlobalService<IVsDebugger>();
+            var debugTargets = new VsDebugTargetInfo4[1];
+	        debugTargets[0].LaunchFlags = grfLaunch;
+            debugTargets[0].dlo = (uint)DEBUG_LAUNCH_OPERATION.DLO_CreateProcess;
+            debugTargets[0].bstrExe = "TestDebug.exe";
+            debugTargets[0].guidLaunchDebugEngine = new Guid(Guids.EngineId);
+
+            var processInfo = new VsDebugTargetProcessInfo[debugTargets.Length];
+            debugger.LaunchDebugTargets4(1, debugTargets, processInfo);
+
+//            var outputWindow = (IVsOutputWindow)project.Package.GetGlobalService<SVsOutputWindow>();
+//            Guid generalPaneGuid = VSConstants.GUID_OutWindowGeneralPane;
+//            IVsOutputWindowPane pane;
+//            outputWindow.GetPane(ref generalPaneGuid, out pane);
+//            pane.OutputString("Test writing to the output window");
+
+	        return VSConstants.S_OK;
 	    }
 
 	    public int QueryDebugLaunch(uint grfLaunch, out int pfCanLaunch)
 	    {
-	        return baseDebugConfiguration.QueryDebugLaunch(grfLaunch, out pfCanLaunch);
+	        pfCanLaunch = 1;
+	        return VSConstants.S_OK;
 	    }
 
         public int get_ProjectCfg(out IVsProjectCfg ppIVsProjectCfg)
