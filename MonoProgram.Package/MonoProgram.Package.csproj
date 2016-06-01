@@ -52,10 +52,30 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="MonoProgramPackage.cs" />
+    <Compile Include="ProgramProperties\MonoPropertiesStore.cs" />
+    <Compile Include="ProgramProperties\MonoPropertiesView.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="ProgramProperties\MonoPropertiesView.Designer.cs">
+      <DependentUpon>MonoPropertiesView.cs</DependentUpon>
+    </Compile>
+    <Compile Include="ProgramProperties\MonoPropertyPage.cs" />
     <Compile Include="Projects\MonoProgramFlavorCfg.cs" />
     <Compile Include="Projects\MonoProgramProjectFactory.cs" />
     <Compile Include="Projects\MonoProgramProjectFlavor.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="PropertyPages\Constants.cs" />
+    <Compile Include="PropertyPages\IPageView.cs" />
+    <Compile Include="PropertyPages\IPageViewSite.cs" />
+    <Compile Include="PropertyPages\IPropertyPageUi.cs" />
+    <Compile Include="PropertyPages\IPropertyStore.cs" />
+    <Compile Include="PropertyPages\PageView.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="PropertyPages\PropertyControlMap.cs" />
+    <Compile Include="PropertyPages\PropertyControlTable.cs" />
+    <Compile Include="PropertyPages\PropertyPage.cs" />
+    <Compile Include="PropertyPages\UserEditCompleteHandler.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Key.snk" />
@@ -162,6 +182,11 @@
       <HintPath>..\packages\Microsoft.VisualStudio.Validation.14.1.111\lib\net45\Microsoft.VisualStudio.Validation.dll</HintPath>
       <Private>True</Private>
     </Reference>
+    <Reference Include="Microsoft.VisualStudio.VSHelp, Version=7.0.3300.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
+      <EmbedInteropTypes>False</EmbedInteropTypes>
+      <HintPath>..\packages\VSSDK.VSHelp.7.0.4\lib\net20\Microsoft.VisualStudio.VSHelp.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
     <Reference Include="Renci.SshNet, Version=2013.4.7.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\packages\SSH.NET.2013.4.7\lib\net40\Renci.SshNet.dll</HintPath>
       <Private>True</Private>
@@ -177,6 +202,9 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <EmbeddedResource Include="ProgramProperties\MonoPropertiesView.resx">
+      <DependentUpon>MonoPropertiesView.cs</DependentUpon>
+    </EmbeddedResource>
     <EmbeddedResource Include="VSPackage.resx">
       <MergeWithCTO>true</MergeWithCTO>
       <ManifestResourceName>VSPackage</ManifestResourceName>

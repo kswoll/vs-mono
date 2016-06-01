@@ -1,8 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
+using System.Text;
+using System.Threading.Tasks;
 using System.Xml;
 using EnvDTE;
 using EnvDTE80;
@@ -18,7 +21,7 @@ namespace MonoProgram.Package.Projects
         /// This allows the property page to map a IVsCfg object (the baseConfiguration) to an actual instance of 
         /// CustomPropertyPageProjectFlavorCfg.
         /// </summary>
-        private static readonly Dictionary<IVsCfg, MonoProgramFlavorCfg> mapIVsCfgToCustomPropertyPageProjectFlavorCfg = new Dictionary<IVsCfg, MonoProgramFlavorCfg>();
+        private static readonly Dictionary<IVsCfg, MonoProgramFlavorCfg> cfgs = new Dictionary<IVsCfg, MonoProgramFlavorCfg>();
 
         private readonly MonoProgramProjectFlavor project;
         private readonly IVsCfg baseProjectCfg;
@@ -35,6 +38,7 @@ namespace MonoProgram.Package.Projects
             this.project = project;
             this.baseProjectCfg = baseProjectCfg;
             this.innerProjectFlavorCfg = innerProjectFlavorCfg;
+            cfgs.Add(baseProjectCfg, this);
 
             var debugGuid = typeof(IVsDebuggableProjectCfg).GUID;
             IntPtr baseDebugConfigurationPtr;
@@ -46,6 +50,18 @@ namespace MonoProgram.Package.Projects
 //            innerProjectFlavorCfg.get_CfgType(ref buildGuid, out baseBuildConfigurationPtr);
 //            baseBuildConfiguration = (IVsBuildableProjectCfg)Marshal.GetObjectForIUnknown(baseBuildConfigurationPtr);
         }
+
+        internal static MonoProgramFlavorCfg GetCustomPropertyPageProjectFlavorCfgFromIVsCfg(IVsCfg configuration)
+		{
+            if (cfgs.ContainsKey(configuration))
+            {
+                return cfgs[configuration];
+            }
+            else
+            {
+                throw new ArgumentOutOfRangeException(nameof(configuration), "Cannot find configuration in mapIVsCfgToSpecializedCfg.");
+            }
+		}
 
         /// <summary>
         /// Provides access to a configuration interfaces such as IVsBuildableProjectCfg2 or IVsDebuggableProjectCfg.
@@ -120,7 +136,7 @@ namespace MonoProgram.Package.Projects
             }
 
             isClosed = true;
-            mapIVsCfgToCustomPropertyPageProjectFlavorCfg.Remove(baseProjectCfg);
+            cfgs.Remove(baseProjectCfg);
             var hr = innerProjectFlavorCfg.Close();
 
             Marshal.ReleaseComObject(baseProjectCfg);
@@ -399,23 +415,39 @@ namespace MonoProgram.Package.Projects
             var dte = project.Package.GetGlobalService<SDTE>() as DTE2;
             var configuration = dte.Solution.SolutionBuild.ActiveConfiguration;
             var dteProject = GetDTEProject(project);
-            var projectFolder = dteProject.FullName;
+            var projectFolder = Path.GetDirectoryName(dteProject.FullName);
             var bashProjectFolder = ConvertToUnixPath(projectFolder);
 //            var dir = Path.Combine(dteProject.FullName, dteProject.ConfigurationManager.ActiveConfiguration.Properties.Item("OutputPath").Value.ToString());
 
             outputPane.OutputString($"Starting build of {projectFolder}...\r\n");
-            var script = $@"cd {bashProjectFolder}
-xbuild
+            var outputFile = Path.GetTempFileName();
+            var script = $@"cd ""{bashProjectFolder}""
+xbuild > ""{ConvertToUnixPath(outputFile)}""
 exit
 ".Replace("\r\n", "\n");
-            var bash = Path.Combine(Environment.SystemDirectory, "Sysnative", "bash.exe");
-//            var bash = @"c:\Windows\Sysnative\bash.exe";
-            var tempFile = Path.GetTempFileName();
-            var arguments = $"--init-file {ConvertToUnixPath(tempFile)}";
-            File.WriteAllText(tempFile, script);
-            var process = System.Diagnostics.Process.Start(bash, arguments);
+            var bash = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Windows), "Sysnative", "bash.exe");
+            var scriptFile = Path.GetTempFileName();
+            var arguments = $"/C {bash} --init-file {ConvertToUnixPath(scriptFile)}";
+            File.WriteAllText(scriptFile, script);
+            
+            var process = new System.Diagnostics.Process();
+            process.StartInfo = new ProcessStartInfo("CMD", arguments)
+            {
+                WindowStyle = ProcessWindowStyle.Hidden
+            };
+            process.Start();
             process.WaitForExit();
-            outputPane.OutputString("Build complete\r\n");
+            outputPane.OutputString(File.ReadAllText(outputFile) + "\r\n");
+
+            try
+            {
+                File.Delete(scriptFile);
+                File.Delete(outputFile);
+            }
+            catch (Exception e)
+            {
+                outputPane.OutputString(e + "\r\n");
+            }
 
             return VSConstants.S_OK;
         }

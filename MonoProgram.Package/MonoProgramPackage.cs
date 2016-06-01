@@ -3,6 +3,7 @@ using System.Runtime.InteropServices;
 using EnvDTE80;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
+using MonoProgram.Package.ProgramProperties;
 using MonoProgram.Package.Projects;
 
 namespace MonoProgram.Package
@@ -10,6 +11,7 @@ namespace MonoProgram.Package
     [PackageRegistration(UseManagedResourcesOnly = true)]
     [InstalledProductRegistration("#110", "#112", "1.0", IconResourceID = 400)] // Info on this package for Help/About
     [Guid(PackageGuidString)]
+    [ProvideObject(typeof(MonoPropertyPage), RegisterUsing = RegistrationMethod.CodeBase)]
     [ProvideProjectFactory(typeof(MonoProgramProjectFactory), "MonoProgram", null, null, null, @"..\Templates\Projects")]
     [SuppressMessage("StyleCop.CSharp.DocumentationRules", "SA1650:ElementDocumentationMustBeSpelledCorrectly", Justification = "pkgdef, VS and vsixmanifest are valid VS terms")]
     public sealed class MonoProgramPackage : Microsoft.VisualStudio.Shell.Package

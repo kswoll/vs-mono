@@ -3,6 +3,7 @@ using System.Runtime.InteropServices;
 using Microsoft.VisualStudio;
 using Microsoft.VisualStudio.Shell.Flavor;
 using Microsoft.VisualStudio.Shell.Interop;
+using MonoProgram.Package.ProgramProperties;
 
 namespace MonoProgram.Package.Projects
 {
@@ -51,6 +52,31 @@ namespace MonoProgram.Package.Projects
 
             flavoredProjectCfg = new MonoProgramFlavorCfg(this, baseProjectCfg, cfg);
             return VSConstants.S_OK;
+        }
+
+        /// <summary>
+        ///     By overriding GetProperty method and using propId parameter containing one of
+        ///     the values of the __VSHPROPID2 enumeration, we can filter, add or remove project
+        ///     properties.
+        ///     For example, to add a page to the configuration-dependent property pages, we
+        ///     need to filter configuration-dependent property pages and then add a new page
+        ///     to the existing list.
+        /// </summary>
+        protected override int GetProperty(uint itemId, int propId, out object property)
+        {
+            if (propId == (int)__VSHPROPID2.VSHPROPID_CfgPropertyPagesCLSIDList)
+            {
+                // Get a semicolon-delimited list of clsids of the configuration-dependent
+                // property pages.
+                ErrorHandler.ThrowOnFailure(base.GetProperty(itemId, propId, out property));
+
+                // Add the CustomPropertyPage property page.
+                property += ';' + typeof(MonoPropertyPage).GUID.ToString("B");
+
+                return VSConstants.S_OK;
+            }
+
+            return base.GetProperty(itemId, propId, out property);
         }
     }
 }
