@@ -48,7 +48,6 @@ namespace MonoProgram.Package.ProgramProperties
                     propertyControlTable.Add(MonoPropertyPage.UsernameProperty, usernameTextBox);
 				    propertyControlTable.Add(MonoPropertyPage.PasswordProperty, passwordTextBox);
 				    propertyControlTable.Add(MonoPropertyPage.DestinationProperty, destinationTextBox);
-				    propertyControlTable.Add(MonoPropertyPage.SourceRootProperty, sourceRootTextBox);
 				    propertyControlTable.Add(MonoPropertyPage.BuildRootProperty, buildRootTextBox);
 				    propertyControlTable.Add(MonoPropertyPage.BuildServerProperty, buildServerTextBox);
 				    propertyControlTable.Add(MonoPropertyPage.BuildFolderProperty, buildFolderTextBox);

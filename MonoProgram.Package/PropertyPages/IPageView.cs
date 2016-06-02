@@ -12,6 +12,6 @@ namespace MonoProgram.Package.PropertyPages
         int ProcessAccelerator(ref Message message);
         void RefreshPropertyValues();
         void ShowView();
-        Size ViewSize { get; }
+        Size Size { get; }
 	}
 }

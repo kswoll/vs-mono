@@ -51,6 +51,9 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="Credentials\Credential.cs" />
+    <Compile Include="Credentials\CredentialManager.cs" />
+    <Compile Include="Credentials\CredentialType.cs" />
     <Compile Include="Debuggers\Connection.cs" />
     <Compile Include="Debuggers\ConnectionManager.cs" />
     <Compile Include="Debuggers\CustomLogger.cs" />

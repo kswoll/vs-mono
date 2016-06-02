@@ -13,15 +13,11 @@ namespace MonoProgram.Package.ProgramProperties
 
         public event Action StoreChanged;
 
-        #region IPropertyStore Members
-
         /// <summary>
-        ///     Use the data passed in to initialize the Properties.
+        /// Use the data passed in to initialize the Properties.
         /// </summary>
         /// <param name="dataObjects">
-        ///     This is normally only one our configuration object, which means that
-        ///     there will be only one elements in configs.
-        ///     If it is null, we should release it.
+        /// This is normally only one our configuration object, which means that there will be only one elements in configs.
         /// </param>
         public void Initialize(object[] dataObjects)
         {
@@ -32,7 +28,7 @@ namespace MonoProgram.Package.ProgramProperties
                 {
                     // This should be our configuration object, so retrive the specific
                     // class so we can access its properties.
-                    var config = MonoProgramFlavorCfg.GetCustomPropertyPageProjectFlavorCfgFromIVsCfg((IVsCfg)dataObject);
+                    var config = MonoProgramFlavorCfg.GetMonoProgramFlavorCfgFromVsCfg((IVsCfg)dataObject);
 
                     if (!configs.Contains(config))
                     {
@@ -67,10 +63,9 @@ namespace MonoProgram.Package.ProgramProperties
         }
 
         /// <summary>
-        ///     Retreive the value of the specified property from storage
+        /// Retrieve the value of the specified property from storage
         /// </summary>
         /// <param name="propertyName">Name of the property to retrieve</param>
-        /// <returns></returns>
         public string PropertyValue(string propertyName)
         {
             string value = null;
@@ -88,10 +83,6 @@ namespace MonoProgram.Package.ProgramProperties
 
             return value;
         }
-
-        #endregion
-
-        #region IDisposable Members
 
         public void Dispose()
         {
@@ -113,8 +104,5 @@ namespace MonoProgram.Package.ProgramProperties
             }
             disposed = true;
         }
-
-        #endregion
-         
     }
 }

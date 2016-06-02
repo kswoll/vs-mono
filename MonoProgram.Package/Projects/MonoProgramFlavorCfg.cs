@@ -2,12 +2,14 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Runtime.InteropServices;
 using System.Xml;
 using EnvDTE;
 using Microsoft.VisualStudio;
 using Microsoft.VisualStudio.OLE.Interop;
 using Microsoft.VisualStudio.Shell.Interop;
+using MonoProgram.Package.Credentials;
 using MonoProgram.Package.Debuggers;
 using MonoProgram.Package.ProgramProperties;
 using MonoProgram.Package.Utils;
@@ -44,7 +46,7 @@ namespace MonoProgram.Package.Projects
 		    baseDebugConfiguration = (IVsDebuggableProjectCfg)Marshal.GetObjectForIUnknown(baseDebugConfigurationPtr);
         }
 
-        internal static MonoProgramFlavorCfg GetCustomPropertyPageProjectFlavorCfgFromIVsCfg(IVsCfg configuration)
+        internal static MonoProgramFlavorCfg GetMonoProgramFlavorCfgFromVsCfg(IVsCfg configuration)
 		{
             if (cfgs.ContainsKey(configuration))
             {
@@ -52,7 +54,7 @@ namespace MonoProgram.Package.Projects
             }
             else
             {
-                throw new ArgumentOutOfRangeException(nameof(configuration), "Cannot find configuration in mapIVsCfgToSpecializedCfg.");
+                throw new ArgumentOutOfRangeException(nameof(configuration), $"Cannot find configuration in {nameof(cfgs)}.");
             }
 		}
 
@@ -230,6 +232,13 @@ namespace MonoProgram.Package.Projects
                 }
             }
 
+            var host = this[MonoPropertyPage.HostProperty];
+            var username = this[MonoPropertyPage.UsernameProperty];
+            if (!string.IsNullOrEmpty(host) && !string.IsNullOrEmpty(username))
+            {
+                this[MonoPropertyPage.PasswordProperty] = CredentialManager.GetCredentials(host, username)?.Password;
+            }
+
             // Forward the call to inner flavor(s)
             if (innerProjectFlavorCfg is IPersistXMLFragment)
             {
@@ -254,6 +263,14 @@ namespace MonoProgram.Package.Projects
 
             if (IsMyFlavorGuid(ref guidFlavor))
             {
+                var host = this[MonoPropertyPage.HostProperty];
+                var username = this[MonoPropertyPage.UsernameProperty];
+                var password = this[MonoPropertyPage.PasswordProperty];
+                if (!string.IsNullOrEmpty(host) && !string.IsNullOrEmpty(username) && password != null)
+                {
+                    CredentialManager.SetCredentials(host, username, password);
+                }
+
                 switch (storage)
                 {
                     case (uint)_PersistStorageType.PST_PROJECT_FILE:
@@ -261,7 +278,7 @@ namespace MonoProgram.Package.Projects
                         var doc = new XmlDocument();
                         var root = doc.CreateElement(GetType().Name);
 
-                        foreach (var property in propertiesList)
+                        foreach (var property in propertiesList.Where(x => x.Key != MonoPropertyPage.PasswordProperty))
                         {
                             XmlNode node = doc.CreateElement(property.Key);
                             node.AppendChild(doc.CreateTextNode(property.Value));

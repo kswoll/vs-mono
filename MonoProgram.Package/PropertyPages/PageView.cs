@@ -41,10 +41,7 @@ namespace MonoProgram.Package.PropertyPages
         private void CheckBox_CheckedChanged(object sender, EventArgs e)
         {
             var chk = sender as CheckBox;
-            if (UserEditComplete != null)
-            {
-                UserEditComplete(chk, chk.Checked.ToString());
-            }
+            UserEditComplete?.Invoke(chk, chk.Checked.ToString());
         }
 
         /// <summary>
@@ -53,10 +50,7 @@ namespace MonoProgram.Package.PropertyPages
         private void TextBox_TextChanged(object sender, EventArgs e)
         {
             var tb = sender as TextBox;
-            if (UserEditComplete != null)
-            {
-                UserEditComplete(tb, tb.Text);
-            }
+            UserEditComplete?.Invoke(tb, tb.Text);
         }
 
         protected virtual void OnInitialize()
@@ -64,14 +58,6 @@ namespace MonoProgram.Package.PropertyPages
         }
 
         #region IPageView members
-
-        /// <summary>
-        ///     Get the size of this UserControl.
-        /// </summary>
-        public Size ViewSize
-        {
-            get { return Size; }
-        }
 
         /// <summary>
         ///     Make the PageView hide.
@@ -110,17 +96,14 @@ namespace MonoProgram.Package.PropertyPages
                 {
                     var chk = control as CheckBox;
                     if (chk != null)
-                    {
-                        chk.CheckedChanged +=
-                            CheckBox_CheckedChanged;
-                    }
+                        chk.CheckedChanged += CheckBox_CheckedChanged;
                 }
             }
             OnInitialize();
         }
 
         /// <summary>
-        ///     Move to new position.
+        /// Move to new position.
         /// </summary>
         public void MoveView(Rectangle rectangle)
         {
@@ -129,7 +112,7 @@ namespace MonoProgram.Package.PropertyPages
         }
 
         /// <summary>
-        ///     Pass a keystroke to the property page for processing.
+        /// Pass a keystroke to the property page for processing.
         /// </summary>
         public int ProcessAccelerator(ref Message keyboardMessage)
         {

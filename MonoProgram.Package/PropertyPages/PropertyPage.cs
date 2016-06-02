@@ -154,8 +154,8 @@ namespace MonoProgram.Package.PropertyPages
             proppageinfo.pszDocString = null;
             proppageinfo.pszHelpFile = null;
             proppageinfo.pszTitle = Title;
-            proppageinfo.SIZE.cx = MyPageView.ViewSize.Width;
-            proppageinfo.SIZE.cy = MyPageView.ViewSize.Height;
+            proppageinfo.SIZE.cx = MyPageView.Size.Width;
+            proppageinfo.SIZE.cy = MyPageView.Size.Height;
             pPageInfo[0] = proppageinfo;
         }
 

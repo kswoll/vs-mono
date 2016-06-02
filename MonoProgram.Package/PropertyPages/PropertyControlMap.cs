@@ -23,8 +23,7 @@ namespace MonoProgram.Package.PropertyPages
         }
 
         /// <summary>
-        ///     Initialize the Controls on a PageView Object using the Properties of
-        ///     a PropertyPage object.
+        /// Initialize the Controls on a PageView Object using the Properties of a PropertyPage object.
         /// </summary>
         public void InitializeControls()
         {

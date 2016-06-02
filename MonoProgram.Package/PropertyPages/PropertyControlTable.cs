@@ -5,12 +5,12 @@ namespace MonoProgram.Package.PropertyPages
 {
     public class PropertyControlTable
     {
-        // With these two dictionaries, it is more quick to find a Control or Property Name. 
+        // With these two dictionaries, it is quicker to find a Control or Property Name. 
         private readonly Dictionary<Control, string> controlNameIndex = new Dictionary<Control, string>();
         private readonly Dictionary<string, Control> propertyNameIndex = new Dictionary<string, Control>();
 
         /// <summary>
-        ///     Add a Key Value Pair to the dictionaries.
+        /// Add a Key Value Pair to the dictionaries.
         /// </summary>
         public void Add(string propertyName, Control control)
         {
@@ -65,7 +65,7 @@ namespace MonoProgram.Package.PropertyPages
         }
 
         /// <summary>
-        ///     Remove a Key Value Pair from the dictionaries.
+        /// Remove a Key Value Pair from the dictionaries.
         /// </summary>
         public void Remove(string propertyName, Control control)
         {
