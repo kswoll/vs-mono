@@ -44,13 +44,15 @@ namespace MonoProgram.Package.ProgramProperties
                     }
 
                     // Add two Property Name / Control KeyValuePairs. 
-					propertyControlTable.Add(MonoPropertyPage.HostProperty, hostTextBox);
-                    propertyControlTable.Add(MonoPropertyPage.UsernameProperty, usernameTextBox);
-				    propertyControlTable.Add(MonoPropertyPage.PasswordProperty, passwordTextBox);
-				    propertyControlTable.Add(MonoPropertyPage.DestinationProperty, destinationTextBox);
+					propertyControlTable.Add(MonoPropertyPage.DebugHostProperty, hostTextBox);
+                    propertyControlTable.Add(MonoPropertyPage.DebugUsernameProperty, usernameTextBox);
+				    propertyControlTable.Add(MonoPropertyPage.DebugPasswordProperty, passwordTextBox);
+				    propertyControlTable.Add(MonoPropertyPage.DebugDestinationProperty, destinationTextBox);
 				    propertyControlTable.Add(MonoPropertyPage.BuildRootProperty, buildRootTextBox);
-				    propertyControlTable.Add(MonoPropertyPage.BuildServerProperty, buildServerTextBox);
+				    propertyControlTable.Add(MonoPropertyPage.BuildHostProperty, buildServerTextBox);
 				    propertyControlTable.Add(MonoPropertyPage.BuildFolderProperty, buildFolderTextBox);
+				    propertyControlTable.Add(MonoPropertyPage.BuildUsernameProperty, buildUsername);
+				    propertyControlTable.Add(MonoPropertyPage.BuildPasswordProperty, buildPassword);
 				}
 				return propertyControlTable;
 			}

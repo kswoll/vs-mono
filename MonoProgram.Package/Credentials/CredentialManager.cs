@@ -12,20 +12,20 @@ namespace MonoProgram.Package.Credentials
     [SuppressMessage("ReSharper", "FieldCanBeMadeReadOnly.Local")]
     public static class CredentialManager
     {
-        private static string DeriveApplicationName(string host, string username)
+        private static string DeriveApplicationName(string category, string host, string username)
         {
-            return $"vs-mono://{username}@{host}";
+            return $"vs-mono-{category}://{username}@{host}";
         }
 
-        public static Credential GetCredentials(string host, string username)
+        public static Credential GetCredentials(string category, string host, string username)
         {
-            var applicationName = DeriveApplicationName(host, username);
+            var applicationName = DeriveApplicationName(category, host, username);
             return ReadCredential(applicationName) ?? new Credential(CredentialType.Generic, applicationName, null, null);
         }
 
-        public static void SetCredentials(string host, string username, string token)
+        public static void SetCredentials(string category, string host, string username, string token)
         {
-            WriteCredential(DeriveApplicationName(host, username), username, token);
+            WriteCredential(DeriveApplicationName(category, host, username), username, token);
         }
 
         private static Credential ReadCredential(string applicationName)

@@ -18,6 +18,9 @@ namespace MonoProgram.Package.Projects
 {
     public class MonoProgramFlavorCfg : IVsProjectFlavorCfg, IPersistXMLFragment, IVsDebuggableProjectCfg, IVsBuildableProjectCfg
     {
+        public const string DebugCategory = "host";
+        public const string BuildCategory = "build";
+
         /// <summary>
         /// This allows the property page to map a IVsCfg object (the baseConfiguration) to an actual instance of 
         /// CustomPropertyPageProjectFlavorCfg.
@@ -232,11 +235,18 @@ namespace MonoProgram.Package.Projects
                 }
             }
 
-            var host = this[MonoPropertyPage.HostProperty];
-            var username = this[MonoPropertyPage.UsernameProperty];
-            if (!string.IsNullOrEmpty(host) && !string.IsNullOrEmpty(username))
+            var debugHost = this[MonoPropertyPage.DebugHostProperty];
+            var debugPassword = this[MonoPropertyPage.DebugUsernameProperty];
+            if (!string.IsNullOrEmpty(debugHost) && !string.IsNullOrEmpty(debugPassword))
             {
-                this[MonoPropertyPage.PasswordProperty] = CredentialManager.GetCredentials(host, username)?.Password;
+                this[MonoPropertyPage.DebugPasswordProperty] = CredentialManager.GetCredentials(DebugCategory, debugHost, debugPassword)?.Password;
+            }
+
+            var buildHost = this[MonoPropertyPage.BuildHostProperty];
+            var buildUsername = this[MonoPropertyPage.BuildUsernameProperty];
+            if (!string.IsNullOrEmpty(buildHost) && !string.IsNullOrEmpty(buildUsername))
+            {
+                this[MonoPropertyPage.BuildPasswordProperty] = CredentialManager.GetCredentials(BuildCategory, buildHost, buildUsername)?.Password;
             }
 
             // Forward the call to inner flavor(s)
@@ -263,12 +273,20 @@ namespace MonoProgram.Package.Projects
 
             if (IsMyFlavorGuid(ref guidFlavor))
             {
-                var host = this[MonoPropertyPage.HostProperty];
-                var username = this[MonoPropertyPage.UsernameProperty];
-                var password = this[MonoPropertyPage.PasswordProperty];
-                if (!string.IsNullOrEmpty(host) && !string.IsNullOrEmpty(username) && password != null)
+                var debugHost = this[MonoPropertyPage.DebugHostProperty];
+                var debugUsername = this[MonoPropertyPage.DebugUsernameProperty];
+                var debugPassword = this[MonoPropertyPage.DebugPasswordProperty];
+                if (!string.IsNullOrEmpty(debugHost) && !string.IsNullOrEmpty(debugUsername) && debugPassword != null)
                 {
-                    CredentialManager.SetCredentials(host, username, password);
+                    CredentialManager.SetCredentials(DebugCategory, debugHost, debugUsername, debugPassword);
+                }
+
+                var buildHost = this[MonoPropertyPage.BuildHostProperty];
+                var buildUsername = this[MonoPropertyPage.BuildUsernameProperty];
+                var buildPassword = this[MonoPropertyPage.BuildPasswordProperty];
+                if (!string.IsNullOrEmpty(buildHost) && !string.IsNullOrEmpty(buildUsername) && buildPassword != null)
+                {
+                    CredentialManager.SetCredentials(BuildCategory, buildHost, buildUsername, buildPassword);
                 }
 
                 switch (storage)
@@ -278,7 +296,7 @@ namespace MonoProgram.Package.Projects
                         var doc = new XmlDocument();
                         var root = doc.CreateElement(GetType().Name);
 
-                        foreach (var property in propertiesList.Where(x => x.Key != MonoPropertyPage.PasswordProperty))
+                        foreach (var property in propertiesList.Where(x => x.Key != MonoPropertyPage.DebugPasswordProperty))
                         {
                             XmlNode node = doc.CreateElement(property.Key);
                             node.AppendChild(doc.CreateTextNode(property.Value));
@@ -401,16 +419,16 @@ namespace MonoProgram.Package.Projects
 	        var fileName = dteProject.Properties.Item("OutputFileName").Value.ToString();
 	        var outputFile = Path.Combine(dir, fileName);
 
-	        var sourceRoot = this[MonoPropertyPage.SourceRootProperty].NullIfEmpty() ?? projectFolder;
+	        var sourceRoot = projectFolder;
 	        var buildRoot = this[MonoPropertyPage.BuildRootProperty].NullIfEmpty() ?? ConvertToUnixPath(sourceRoot);
-            var settings = new MonoDebuggerSettings(this[MonoPropertyPage.HostProperty], this[MonoPropertyPage.UsernameProperty], this[MonoPropertyPage.PasswordProperty], sourceRoot, buildRoot);
+            var settings = new MonoDebuggerSettings(this[MonoPropertyPage.DebugHostProperty], this[MonoPropertyPage.DebugUsernameProperty], this[MonoPropertyPage.DebugPasswordProperty], sourceRoot, buildRoot);
 
             var debugger = (IVsDebugger4)project.Package.GetGlobalService<IVsDebugger>();
             var debugTargets = new VsDebugTargetInfo4[1];
 	        debugTargets[0].LaunchFlags = grfLaunch;
             debugTargets[0].dlo = (uint)DEBUG_LAUNCH_OPERATION.DLO_CreateProcess;
             debugTargets[0].bstrExe = outputFile;
-	        debugTargets[0].bstrCurDir = this[MonoPropertyPage.DestinationProperty];
+	        debugTargets[0].bstrCurDir = this[MonoPropertyPage.DebugDestinationProperty];
 	        debugTargets[0].bstrOptions = settings.ToString();
             debugTargets[0].guidLaunchDebugEngine = new Guid(Guids.EngineId);
 
