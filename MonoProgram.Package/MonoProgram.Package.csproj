@@ -123,9 +123,11 @@
     <Compile Include="PropertyPages\UserEditCompleteHandler.cs" />
     <Compile Include="Utils\ComponentException.cs" />
     <Compile Include="Utils\EngineUtils.cs" />
+    <Compile Include="Utils\FileUtils.cs" />
     <Compile Include="Utils\ProvideDebugEngineAttribute.cs" />
     <Compile Include="Utils\SftpExtensions.cs" />
     <Compile Include="Utils\StringExtensions.cs" />
+    <Compile Include="Utils\VsOutputWindowPaneExtensions.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Key.snk" />

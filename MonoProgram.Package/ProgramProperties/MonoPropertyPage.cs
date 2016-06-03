@@ -10,7 +10,6 @@ namespace MonoProgram.Package.ProgramProperties
         public const string DebugUsernameProperty = "UsernameProperty";
         public const string DebugPasswordProperty = "PasswordProperty";
         public const string DebugDestinationProperty = "DestinationProperty";
-        public const string BuildRootProperty = "BuildRoot";
         public const string BuildHostProperty = "BuildHostProperty";
         public const string BuildFolderProperty = "BuildFolderProperty";
         public const string BuildUsernameProperty = "BuildUsername";

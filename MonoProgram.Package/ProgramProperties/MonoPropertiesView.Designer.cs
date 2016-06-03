@@ -44,7 +44,6 @@ namespace MonoProgram.Package.ProgramProperties
             System.Windows.Forms.Label label9;
             System.Windows.Forms.Label label8;
             System.Windows.Forms.Label label7;
-            System.Windows.Forms.Label label6;
             System.Windows.Forms.Label buildServerLabel;
             this.destinationTextBox = new System.Windows.Forms.TextBox();
             this.destinationLabel = new System.Windows.Forms.Label();
@@ -58,10 +57,8 @@ namespace MonoProgram.Package.ProgramProperties
             this.label12 = new System.Windows.Forms.Label();
             this.buildPassword = new System.Windows.Forms.TextBox();
             this.buildUsername = new System.Windows.Forms.TextBox();
-            this.buildRootLabel = new System.Windows.Forms.Label();
             this.buildFolderTextBox = new System.Windows.Forms.TextBox();
             this.buildServerTextBox = new System.Windows.Forms.TextBox();
-            this.buildRootTextBox = new System.Windows.Forms.TextBox();
             this.notifyIcon1 = new System.Windows.Forms.NotifyIcon(this.components);
             groupBox1 = new System.Windows.Forms.GroupBox();
             label4 = new System.Windows.Forms.Label();
@@ -75,7 +72,6 @@ namespace MonoProgram.Package.ProgramProperties
             label9 = new System.Windows.Forms.Label();
             label8 = new System.Windows.Forms.Label();
             label7 = new System.Windows.Forms.Label();
-            label6 = new System.Windows.Forms.Label();
             buildServerLabel = new System.Windows.Forms.Label();
             groupBox1.SuspendLayout();
             groupBox3.SuspendLayout();
@@ -212,18 +208,15 @@ namespace MonoProgram.Package.ProgramProperties
             groupBox3.Controls.Add(label11);
             groupBox3.Controls.Add(this.buildUsername);
             groupBox3.Controls.Add(label10);
-            groupBox3.Controls.Add(this.buildRootLabel);
             groupBox3.Controls.Add(label9);
             groupBox3.Controls.Add(this.buildFolderTextBox);
             groupBox3.Controls.Add(label8);
             groupBox3.Controls.Add(label7);
-            groupBox3.Controls.Add(label6);
             groupBox3.Controls.Add(this.buildServerTextBox);
             groupBox3.Controls.Add(buildServerLabel);
-            groupBox3.Controls.Add(this.buildRootTextBox);
             groupBox3.Location = new System.Drawing.Point(9, 380);
             groupBox3.Name = "groupBox3";
-            groupBox3.Size = new System.Drawing.Size(1260, 520);
+            groupBox3.Size = new System.Drawing.Size(1260, 452);
             groupBox3.TabIndex = 26;
             groupBox3.TabStop = false;
             groupBox3.Text = "Build Host";
@@ -233,14 +226,14 @@ namespace MonoProgram.Package.ProgramProperties
             label14.AutoSize = true;
             label14.Location = new System.Drawing.Point(18, 41);
             label14.Name = "label14";
-            label14.Size = new System.Drawing.Size(1211, 75);
+            label14.Size = new System.Drawing.Size(1093, 75);
             label14.TabIndex = 41;
             label14.Text = resources.GetString("label14.Text");
             // 
             // label13
             // 
             this.label13.AutoSize = true;
-            this.label13.Location = new System.Drawing.Point(541, 469);
+            this.label13.Location = new System.Drawing.Point(541, 393);
             this.label13.Name = "label13";
             this.label13.Size = new System.Drawing.Size(312, 25);
             this.label13.TabIndex = 40;
@@ -249,7 +242,7 @@ namespace MonoProgram.Package.ProgramProperties
             // label12
             // 
             this.label12.AutoSize = true;
-            this.label12.Location = new System.Drawing.Point(541, 397);
+            this.label12.Location = new System.Drawing.Point(541, 321);
             this.label12.Name = "label12";
             this.label12.Size = new System.Drawing.Size(315, 25);
             this.label12.TabIndex = 39;
@@ -257,7 +250,7 @@ namespace MonoProgram.Package.ProgramProperties
             // 
             // buildPassword
             // 
-            this.buildPassword.Location = new System.Drawing.Point(23, 466);
+            this.buildPassword.Location = new System.Drawing.Point(23, 390);
             this.buildPassword.Name = "buildPassword";
             this.buildPassword.PasswordChar = '#';
             this.buildPassword.Size = new System.Drawing.Size(482, 31);
@@ -266,7 +259,7 @@ namespace MonoProgram.Package.ProgramProperties
             // label11
             // 
             label11.AutoSize = true;
-            label11.Location = new System.Drawing.Point(18, 438);
+            label11.Location = new System.Drawing.Point(18, 362);
             label11.Name = "label11";
             label11.Size = new System.Drawing.Size(106, 25);
             label11.TabIndex = 37;
@@ -274,7 +267,7 @@ namespace MonoProgram.Package.ProgramProperties
             // 
             // buildUsername
             // 
-            this.buildUsername.Location = new System.Drawing.Point(24, 394);
+            this.buildUsername.Location = new System.Drawing.Point(24, 318);
             this.buildUsername.Name = "buildUsername";
             this.buildUsername.Size = new System.Drawing.Size(481, 31);
             this.buildUsername.TabIndex = 36;
@@ -282,33 +275,25 @@ namespace MonoProgram.Package.ProgramProperties
             // label10
             // 
             label10.AutoSize = true;
-            label10.Location = new System.Drawing.Point(18, 366);
+            label10.Location = new System.Drawing.Point(18, 290);
             label10.Name = "label10";
             label10.Size = new System.Drawing.Size(110, 25);
             label10.TabIndex = 35;
             label10.Text = "Username";
             // 
-            // buildRootLabel
-            // 
-            this.buildRootLabel.AutoSize = true;
-            this.buildRootLabel.Location = new System.Drawing.Point(18, 148);
-            this.buildRootLabel.Name = "buildRootLabel";
-            this.buildRootLabel.Size = new System.Drawing.Size(111, 25);
-            this.buildRootLabel.TabIndex = 34;
-            this.buildRootLabel.Text = "Build Root";
-            // 
             // label9
             // 
             label9.AutoSize = true;
-            label9.Location = new System.Drawing.Point(541, 325);
+            label9.Location = new System.Drawing.Point(541, 249);
             label9.Name = "label9";
-            label9.Size = new System.Drawing.Size(668, 25);
+            label9.Size = new System.Drawing.Size(668, 50);
             label9.TabIndex = 33;
-            label9.Text = "The folder on the build server in which the build should be performed";
+            label9.Text = "The folder on the build server in which the build should be performed\r\nYou must u" +
+    "se an absolute path";
             // 
             // buildFolderTextBox
             // 
-            this.buildFolderTextBox.Location = new System.Drawing.Point(23, 322);
+            this.buildFolderTextBox.Location = new System.Drawing.Point(23, 246);
             this.buildFolderTextBox.Name = "buildFolderTextBox";
             this.buildFolderTextBox.Size = new System.Drawing.Size(482, 31);
             this.buildFolderTextBox.TabIndex = 32;
@@ -316,7 +301,7 @@ namespace MonoProgram.Package.ProgramProperties
             // label8
             // 
             label8.AutoSize = true;
-            label8.Location = new System.Drawing.Point(18, 294);
+            label8.Location = new System.Drawing.Point(18, 218);
             label8.Name = "label8";
             label8.Size = new System.Drawing.Size(127, 25);
             label8.TabIndex = 31;
@@ -325,24 +310,15 @@ namespace MonoProgram.Package.ProgramProperties
             // label7
             // 
             label7.AutoSize = true;
-            label7.Location = new System.Drawing.Point(541, 251);
+            label7.Location = new System.Drawing.Point(541, 175);
             label7.Name = "label7";
             label7.Size = new System.Drawing.Size(381, 25);
             label7.TabIndex = 30;
             label7.Text = "The server that is performing the build.";
             // 
-            // label6
-            // 
-            label6.AutoSize = true;
-            label6.Location = new System.Drawing.Point(541, 179);
-            label6.Name = "label6";
-            label6.Size = new System.Drawing.Size(553, 25);
-            label6.TabIndex = 29;
-            label6.Text = "The folder on the build server that matches Source Root.";
-            // 
             // buildServerTextBox
             // 
-            this.buildServerTextBox.Location = new System.Drawing.Point(23, 248);
+            this.buildServerTextBox.Location = new System.Drawing.Point(23, 172);
             this.buildServerTextBox.Name = "buildServerTextBox";
             this.buildServerTextBox.Size = new System.Drawing.Size(482, 31);
             this.buildServerTextBox.TabIndex = 28;
@@ -350,18 +326,11 @@ namespace MonoProgram.Package.ProgramProperties
             // buildServerLabel
             // 
             buildServerLabel.AutoSize = true;
-            buildServerLabel.Location = new System.Drawing.Point(18, 220);
+            buildServerLabel.Location = new System.Drawing.Point(18, 144);
             buildServerLabel.Name = "buildServerLabel";
             buildServerLabel.Size = new System.Drawing.Size(56, 25);
             buildServerLabel.TabIndex = 27;
             buildServerLabel.Text = "Host";
-            // 
-            // buildRootTextBox
-            // 
-            this.buildRootTextBox.Location = new System.Drawing.Point(23, 176);
-            this.buildRootTextBox.Name = "buildRootTextBox";
-            this.buildRootTextBox.Size = new System.Drawing.Size(482, 31);
-            this.buildRootTextBox.TabIndex = 26;
             // 
             // notifyIcon1
             // 
@@ -395,10 +364,8 @@ namespace MonoProgram.Package.ProgramProperties
         private Label hostLabel;
         private TextBox destinationTextBox;
         private Label destinationLabel;
-        private Label buildRootLabel;
         private TextBox buildFolderTextBox;
         private TextBox buildServerTextBox;
-        private TextBox buildRootTextBox;
         private TextBox buildPassword;
         private TextBox buildUsername;
         private Label label13;

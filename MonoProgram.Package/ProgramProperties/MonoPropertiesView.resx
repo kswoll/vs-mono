@@ -139,9 +139,9 @@
     <value>False</value>
   </metadata>
   <data name="label14.Text" xml:space="preserve">
-    <value>By default, vs-mono will use the native Windows Bash for performing the build.  If you are using your own custom build server 
-(such as a VM), then fill out the info here.  This information will be used to upload the source code to the specified build 
-folder, run xbuild, and then upload the build artifacts to the host.</value>
+    <value>By default, vs-mono will use the native Windows Bash for performing the build.  If you are using your own custom 
+build server (such as a VM), then fill out the info here.  This information will be used to upload the source code to 
+the specified build folder, run xbuild, and then upload the build artifacts to the host.</value>
   </data>
   <metadata name="label11.GenerateMember" type="System.Boolean, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089">
     <value>False</value>
@@ -156,9 +156,6 @@ folder, run xbuild, and then upload the build artifacts to the host.</value>
     <value>False</value>
   </metadata>
   <metadata name="label7.GenerateMember" type="System.Boolean, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089">
-    <value>False</value>
-  </metadata>
-  <metadata name="label6.GenerateMember" type="System.Boolean, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089">
     <value>False</value>
   </metadata>
   <metadata name="buildServerLabel.GenerateMember" type="System.Boolean, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089">

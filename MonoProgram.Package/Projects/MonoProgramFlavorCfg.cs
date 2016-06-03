@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
+using System.Threading.Tasks;
 using System.Xml;
 using EnvDTE;
 using Microsoft.VisualStudio;
@@ -421,7 +422,7 @@ namespace MonoProgram.Package.Projects
 	        var outputFile = Path.Combine(dir, fileName);
 
 	        var sourceRoot = projectFolder;
-	        var buildRoot = this[MonoPropertyPage.BuildRootProperty].NullIfEmpty() ?? ConvertToUnixPath(sourceRoot);
+	        var buildRoot = this[MonoPropertyPage.BuildFolderProperty].NullIfEmpty() ?? ConvertToUnixPath(sourceRoot);
             var settings = new MonoDebuggerSettings(this[MonoPropertyPage.DebugHostProperty], this[MonoPropertyPage.DebugUsernameProperty], this[MonoPropertyPage.DebugPasswordProperty], sourceRoot, buildRoot);
 
             var debugger = (IVsDebugger4)project.Package.GetGlobalService<IVsDebugger>();
@@ -468,7 +469,7 @@ namespace MonoProgram.Package.Projects
             var buildHost = this[MonoPropertyPage.BuildHostProperty];
             var dteProject = GetDTEProject(project);
             var projectFolder = Path.GetDirectoryName(dteProject.FullName);
-            outputPane.OutputString($"Starting build of {projectFolder}...\r\n");
+            outputPane.Log($"Starting build of {projectFolder}...");
 
             // If using Windows Bash...
             if (string.IsNullOrEmpty(buildHost))
@@ -491,7 +492,7 @@ namespace MonoProgram.Package.Projects
                 };
                 process.Start();
                 process.WaitForExit();
-                outputPane.OutputString(File.ReadAllText(outputFile) + "\r\n");
+                outputPane.Log(File.ReadAllText(outputFile));
 
                 try
                 {
@@ -500,11 +501,12 @@ namespace MonoProgram.Package.Projects
                 }
                 catch (Exception e)
                 {
-                    outputPane.OutputString(e + "\r\n");
+                    outputPane.Log(e.ToString());
                 }
             }
             else
             {
+                outputPane.Log("Uploading project to the build server...");
                 var buildUsername = this[MonoPropertyPage.BuildUsernameProperty];
                 var buildPassword = this[MonoPropertyPage.BuildPasswordProperty];
                 var buildFolder = this[MonoPropertyPage.BuildFolderProperty];
@@ -514,10 +516,58 @@ namespace MonoProgram.Package.Projects
 
                     client.CreateFullDirectory(buildFolder);
                     client.ChangeDirectory(buildFolder);
+
+                    outputPane.Log($"Clearing out the contents of the build folder: {buildFolder}");
                     client.Clear();
 
                     // Upload project
-                    client.Upload(".");
+                    var createdDirectories = new HashSet<string>();
+                    foreach (ProjectItem projectItem in dteProject.ProjectItems)
+                    {
+                        for (short i = 1; i <= projectItem.FileCount; i++)
+                        {
+                            var fileName = projectItem.FileNames[i];
+                            if (File.Exists(fileName))
+                            {
+                                fileName = FileUtils.ToRelativePath(projectFolder, fileName);
+                                client.Upload(projectFolder, fileName, createdDirectories);
+                                outputPane.Log($"Uploaded {fileName}");                                
+                            }
+                        }
+                    }
+
+                    using (var ssh = new SshClient(buildHost, buildUsername, buildPassword))
+                    {
+                        outputPane.Log("Starting xbuild to build the project");
+                        ssh.Connect();
+                        ssh.RunCommand($"cd {buildFolder}");
+                        var command = ssh.CreateCommand($"xbuild /p:Configuration={dteProject.ConfigurationManager.ActiveConfiguration.ConfigurationName}");
+                        var asyncResult = command.BeginExecute();
+                        Task.Run(() =>
+                        {
+                            using (var reader = new StreamReader(command.OutputStream))
+                            {
+                                var line = reader.ReadLine();
+                                outputPane.Log(line);
+                            }
+                        });
+                        command.EndExecute(asyncResult);
+                    }
+
+	                var projectConfiguration = dteProject.ConfigurationManager.ActiveConfiguration;
+	                var outputFolder = Path.GetDirectoryName(Path.Combine(projectFolder, projectConfiguration.Properties.Item("OutputPath").Value.ToString()));
+                    outputPane.Log($"Copying build artifacts to the output folder: {outputFolder}");
+
+                    var buildServerOutputPath = buildFolder + "/" + FileUtils.ToRelativePath(projectFolder, outputFolder).Replace("\\", "/");
+                    client.ChangeDirectory(buildServerOutputPath);
+                    foreach (var file in client.ListDirectory("."))
+                    {
+                        using (var output = new FileStream(Path.Combine(outputFolder, file.Name), FileMode.Create, FileAccess.Write))
+                        {
+                            client.DownloadFile(file.FullName, output);
+                            outputPane.Log($"Copied {file.Name}");
+                        }
+                    }
 
                     client.Disconnect();
                 }
