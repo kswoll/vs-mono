@@ -259,6 +259,7 @@ namespace MonoProgram.Package.ProgramProperties
             // 
             this.buildPassword.Location = new System.Drawing.Point(23, 466);
             this.buildPassword.Name = "buildPassword";
+            this.buildPassword.PasswordChar = '#';
             this.buildPassword.Size = new System.Drawing.Size(482, 31);
             this.buildPassword.TabIndex = 38;
             // 

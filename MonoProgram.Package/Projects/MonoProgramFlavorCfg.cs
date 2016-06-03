@@ -13,6 +13,7 @@ using MonoProgram.Package.Credentials;
 using MonoProgram.Package.Debuggers;
 using MonoProgram.Package.ProgramProperties;
 using MonoProgram.Package.Utils;
+using Renci.SshNet;
 
 namespace MonoProgram.Package.Projects
 {
@@ -464,39 +465,64 @@ namespace MonoProgram.Package.Projects
 
         public int StartBuild(IVsOutputWindowPane outputPane, uint dwOptions)
         {
+            var buildHost = this[MonoPropertyPage.BuildHostProperty];
             var dteProject = GetDTEProject(project);
             var projectFolder = Path.GetDirectoryName(dteProject.FullName);
-            var bashProjectFolder = ConvertToUnixPath(projectFolder);
-
             outputPane.OutputString($"Starting build of {projectFolder}...\r\n");
-            var outputFile = Path.GetTempFileName();
-            var script = $@"cd ""{bashProjectFolder}""
-xbuild > ""{ConvertToUnixPath(outputFile)}""
-exit
-".Replace("\r\n", "\n");
-            var bash = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Windows), "Sysnative", "bash.exe");
-            var scriptFile = Path.GetTempFileName();
-            var arguments = $"/C {bash} --init-file {ConvertToUnixPath(scriptFile)}";
-            File.WriteAllText(scriptFile, script);
-            
-            var process = new System.Diagnostics.Process();
-            process.StartInfo = new ProcessStartInfo("CMD", arguments)
-            {
-                WindowStyle = ProcessWindowStyle.Hidden
-            };
-            process.Start();
-            process.WaitForExit();
-            outputPane.OutputString(File.ReadAllText(outputFile) + "\r\n");
 
-            try
+            // If using Windows Bash...
+            if (string.IsNullOrEmpty(buildHost))
             {
-                File.Delete(scriptFile);
-                File.Delete(outputFile);
+                var bashProjectFolder = ConvertToUnixPath(projectFolder);
+                var outputFile = Path.GetTempFileName();
+                var script = $@"cd ""{bashProjectFolder}""
+    xbuild > ""{ConvertToUnixPath(outputFile)}""
+    exit
+    ".Replace("\r\n", "\n");
+                var bash = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Windows), "Sysnative", "bash.exe");
+                var scriptFile = Path.GetTempFileName();
+                var arguments = $"/C {bash} --init-file {ConvertToUnixPath(scriptFile)}";
+                File.WriteAllText(scriptFile, script);
+
+                var process = new System.Diagnostics.Process();
+                process.StartInfo = new ProcessStartInfo("CMD", arguments)
+                {
+                    WindowStyle = ProcessWindowStyle.Hidden
+                };
+                process.Start();
+                process.WaitForExit();
+                outputPane.OutputString(File.ReadAllText(outputFile) + "\r\n");
+
+                try
+                {
+                    File.Delete(scriptFile);
+                    File.Delete(outputFile);
+                }
+                catch (Exception e)
+                {
+                    outputPane.OutputString(e + "\r\n");
+                }
             }
-            catch (Exception e)
+            else
             {
-                outputPane.OutputString(e + "\r\n");
+                var buildUsername = this[MonoPropertyPage.BuildUsernameProperty];
+                var buildPassword = this[MonoPropertyPage.BuildPasswordProperty];
+                var buildFolder = this[MonoPropertyPage.BuildFolderProperty];
+                using (var client = new SftpClient(buildHost, buildUsername, buildPassword))
+                {
+                    client.Connect();
+
+                    client.CreateFullDirectory(buildFolder);
+                    client.ChangeDirectory(buildFolder);
+                    client.Clear();
+
+                    // Upload project
+                    client.Upload(".");
+
+                    client.Disconnect();
+                }
             }
+
 
             return VSConstants.S_OK;
         }
