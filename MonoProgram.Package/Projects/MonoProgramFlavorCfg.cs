@@ -522,8 +522,14 @@ namespace MonoProgram.Package.Projects
 
                     // Upload project
                     var createdDirectories = new HashSet<string>();
-                    foreach (ProjectItem projectItem in dteProject.ProjectItems)
+                    var projectFile = Path.GetFileName(dteProject.FullName);
+                    client.Upload(projectFolder, projectFile, createdDirectories);
+                    outputPane.Log($"Uploaded {projectFile}");
+                    var projectItems = new Queue<ProjectItem>(dteProject.ProjectItems.Cast<ProjectItem>());
+                    while (projectItems.Any())
                     {
+                        var projectItem = projectItems.Dequeue();
+
                         for (short i = 1; i <= projectItem.FileCount; i++)
                         {
                             var fileName = projectItem.FileNames[i];
@@ -534,24 +540,21 @@ namespace MonoProgram.Package.Projects
                                 outputPane.Log($"Uploaded {fileName}");                                
                             }
                         }
+
+                        foreach (ProjectItem childItem in projectItem.ProjectItems)
+                        {
+                            projectItems.Enqueue(childItem);
+                        }
                     }
 
                     using (var ssh = new SshClient(buildHost, buildUsername, buildPassword))
                     {
                         outputPane.Log("Starting xbuild to build the project");
                         ssh.Connect();
-                        ssh.RunCommand($"cd {buildFolder}");
-                        var command = ssh.CreateCommand($"xbuild /p:Configuration={dteProject.ConfigurationManager.ActiveConfiguration.ConfigurationName}");
-                        var asyncResult = command.BeginExecute();
-                        Task.Run(() =>
-                        {
-                            using (var reader = new StreamReader(command.OutputStream))
-                            {
-                                var line = reader.ReadLine();
-                                outputPane.Log(line);
-                            }
-                        });
-                        command.EndExecute(asyncResult);
+//                        ssh.RunCommand($"cd {buildFolder};");
+//                        outputPane.Log($"Changed to build folder: {buildFolder}");
+//                        ssh.RunCommand("pwd", outputPane);
+                        ssh.RunCommand($"cd {buildFolder}; xbuild /p:Configuration={dteProject.ConfigurationManager.ActiveConfiguration.ConfigurationName} > xbuild.output; cat xbuild.output; rm xbuild.output", outputPane);
                     }
 
 	                var projectConfiguration = dteProject.ConfigurationManager.ActiveConfiguration;
@@ -560,7 +563,7 @@ namespace MonoProgram.Package.Projects
 
                     var buildServerOutputPath = buildFolder + "/" + FileUtils.ToRelativePath(projectFolder, outputFolder).Replace("\\", "/");
                     client.ChangeDirectory(buildServerOutputPath);
-                    foreach (var file in client.ListDirectory("."))
+                    foreach (var file in client.ListDirectory(".").Where(x => x.IsRegularFile))
                     {
                         using (var output = new FileStream(Path.Combine(outputFolder, file.Name), FileMode.Create, FileAccess.Write))
                         {

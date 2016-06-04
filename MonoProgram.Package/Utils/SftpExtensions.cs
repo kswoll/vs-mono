@@ -19,7 +19,7 @@ namespace MonoProgram.Package.Utils
                     continue;
 
                 if (file.IsDirectory)
-                    client.Clear(file.Name);
+                    client.Clear($"{path}/{file.Name}");
                 file.Delete();
             }
         }
@@ -45,7 +45,7 @@ namespace MonoProgram.Package.Utils
                     client.CreateFullDirectory(directory);
                 using (var fileStream = new FileInfo(fullPath).OpenRead())
                 {
-                    client.UploadFile(fileStream, path);
+                    client.UploadFile(fileStream, path.Replace('\\', '/'));
                 }
             }
         }

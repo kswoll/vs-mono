@@ -126,6 +126,7 @@
     <Compile Include="Utils\FileUtils.cs" />
     <Compile Include="Utils\ProvideDebugEngineAttribute.cs" />
     <Compile Include="Utils\SftpExtensions.cs" />
+    <Compile Include="Utils\SshExtensions.cs" />
     <Compile Include="Utils\StringExtensions.cs" />
     <Compile Include="Utils\VsOutputWindowPaneExtensions.cs" />
   </ItemGroup>

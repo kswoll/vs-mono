@@ -449,8 +449,10 @@ namespace MonoProgram.Package.Debuggers
                 {
                     using (var reader = new StreamReader(runCommand.OutputStream))
                     {
-                        var line = reader.ReadLine();
-                        Log(line);
+                        for (var line = reader.ReadLine(); line != null; line = reader.ReadLine())
+                        {
+                            Log(line);
+                        }
                     }
                 });
 
