@@ -436,24 +436,11 @@ namespace MonoProgram.Package.Debuggers
                 var targetExe = directory + "/" + Path.GetFileName(exe);
                 connection.Ssh.RunCommand("cd ~");
                 Log("Launching application");
-                runCommand = connection.Ssh.CreateCommand($"mono --debug=mdb-optimizations --debugger-agent=transport=dt_socket,address=0.0.0.0:6438,server=y {targetExe}");
-                runCommand.BeginExecute(ar =>
+                runCommand = connection.Ssh.BeginCommand($"mono --debug=mdb-optimizations --debugger-agent=transport=dt_socket,address=0.0.0.0:6438,server=y {targetExe}", this.outputWindow, ar =>
                 {
 // Persistent connection
 //                    sshClient.Disconnect();
 //                    sshClient.Dispose();
-                });
-
-                // Pipe standard out of the launched program to the output window in Visual Studio
-                Task.Run(() =>
-                {
-                    using (var reader = new StreamReader(runCommand.OutputStream))
-                    {
-                        for (var line = reader.ReadLine(); line != null; line = reader.ReadLine())
-                        {
-                            Log(line);
-                        }
-                    }
                 });
 
                 // Trigger that the app is now running for whomever might be waiting for that signal
@@ -528,7 +515,7 @@ namespace MonoProgram.Package.Debuggers
             {
                 waiter.WaitOne();
 
-                var ipAddress = Dns.GetHostEntry(settings.Host).AddressList.First();
+                var ipAddress = HostUtils.ResolveHostOrIPAddress(settings.Host);
                 Session.Run(new SoftDebuggerStartInfo(new SoftDebuggerConnectArgs("", ipAddress, 6438)), 
                     new DebuggerSessionOptions { EvaluationOptions = EvaluationOptions.DefaultOptions, ProjectAssembliesOnly = false });
             });

@@ -551,9 +551,6 @@ namespace MonoProgram.Package.Projects
                     {
                         outputPane.Log("Starting xbuild to build the project");
                         ssh.Connect();
-//                        ssh.RunCommand($"cd {buildFolder};");
-//                        outputPane.Log($"Changed to build folder: {buildFolder}");
-//                        ssh.RunCommand("pwd", outputPane);
                         ssh.RunCommand($"cd {buildFolder}; xbuild /p:Configuration={dteProject.ConfigurationManager.ActiveConfiguration.ConfigurationName} > xbuild.output; cat xbuild.output; rm xbuild.output", outputPane);
                     }
 

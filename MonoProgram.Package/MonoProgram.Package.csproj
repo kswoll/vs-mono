@@ -124,6 +124,7 @@
     <Compile Include="Utils\ComponentException.cs" />
     <Compile Include="Utils\EngineUtils.cs" />
     <Compile Include="Utils\FileUtils.cs" />
+    <Compile Include="Utils\HostUtils.cs" />
     <Compile Include="Utils\ProvideDebugEngineAttribute.cs" />
     <Compile Include="Utils\SftpExtensions.cs" />
     <Compile Include="Utils\SshExtensions.cs" />
