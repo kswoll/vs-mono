@@ -26,7 +26,7 @@ namespace MonoProgram.Package.Debuggers
             this.request = request;
 
             var requestInfo = new BP_REQUEST_INFO[1];
-            EngineUtils.CheckOk(request.GetRequestInfo(enum_BPREQI_FIELDS.BPREQI_BPLOCATION, requestInfo));
+            EngineUtils.CheckOk(request.GetRequestInfo(enum_BPREQI_FIELDS.BPREQI_ALLFIELDS, requestInfo));
             this.requestInfo = requestInfo[0];
         }
 
@@ -139,8 +139,8 @@ namespace MonoProgram.Package.Debuggers
                     breakpoint.HitCountMode = HitCountMode.GreaterThanOrEqualTo;
                     break;
                 case enum_BP_PASSCOUNT_STYLE.BP_PASSCOUNT_MOD:
-                    breakpoint.HitCountMode = HitCountMode.None;
-                    return VSConstants.E_NOTIMPL;
+                    breakpoint.HitCountMode = HitCountMode.MultipleOf;
+                    break;
                 default:
                     breakpoint.HitCountMode = HitCountMode.None;
                     break;
@@ -169,7 +169,8 @@ namespace MonoProgram.Package.Debuggers
             if (!isDeleted)
             {
                 isDeleted = true;
-                breakpointManager.Remove(breakpoint);
+                if (breakpoint != null)
+                    breakpointManager.Remove(breakpoint);
 
                 lock (boundBreakpoints)
                 {
