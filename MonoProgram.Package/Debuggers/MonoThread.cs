@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Diagnostics;
+using System.Threading;
 using Microsoft.VisualStudio;
 using Microsoft.VisualStudio.Debugger.Interop;
 using Mono.Debugging.Client;
@@ -15,6 +16,7 @@ namespace MonoProgram.Package.Debuggers
         private string threadDisplayName;
         private uint threadFlags;
         private ThreadInfo debuggedThread;
+        private int? lineNumberOverride;
 
         public MonoThread(MonoEngine engine, ThreadInfo debuggedThread)
         {
@@ -54,12 +56,11 @@ namespace MonoProgram.Package.Debuggers
         int IDebugThread2.EnumFrameInfo(enum_FRAMEINFO_FLAGS dwFieldSpec, uint nRadix, out IEnumDebugFrameInfo2 enumObject)
         {
             // Ask the lower-level to perform a stack walk on this thread
-            var stackFrames = debuggedThread.Backtrace;
             enumObject = null;
 
             try
             {
-                int numStackFrames = stackFrames.FrameCount;
+                int numStackFrames = debuggedThread.Backtrace.FrameCount;
                 FRAMEINFO[] frameInfoArray;
 
                 if (numStackFrames == 0)
@@ -75,7 +76,9 @@ namespace MonoProgram.Package.Debuggers
 
                     for (int i = 0; i < numStackFrames; i++)
                     {
-                        MonoStackFrame frame = new MonoStackFrame(engine, this, stackFrames.GetFrame(i));
+                        var frame = new MonoStackFrame(engine, this, () => debuggedThread.Backtrace.GetFrame(i));
+                        if (lineNumberOverride != null)
+                            frame.LineNumber = lineNumberOverride.Value;
                         frame.SetFrameInfo(dwFieldSpec, out frameInfoArray[i]);
                     }
                 }
@@ -188,21 +191,27 @@ namespace MonoProgram.Package.Debuggers
             context.GetStatementRange(startPosition, endPosition);
 
             EventHandler<TargetEventArgs> stepFinished = null;
+//            var waiter = new AutoResetEvent(false);
             stepFinished = (sender, args) =>
             {
-                if (true || args.Thread.Backtrace.GetFrame(0).SourceLocation.Line == startPosition[0].dwLine)
-                {
+                lineNumberOverride = null;
+//                if (true || args.Thread.Backtrace.GetFrame(0).SourceLocation.Line == startPosition[0].dwLine)
+//                {
                     engine.Session.TargetStopped -= stepFinished;
-                    engine.Send(new MonoBreakpointEvent(new MonoBoundBreakpointsEnum(new IDebugBoundBreakpoint2[0])), MonoStepCompleteEvent.IID, engine.ThreadManager[args.Thread]);
-                }
-                else
-                {
-                    engine.Session.NextInstruction();
-                }
+//                    waiter.Set();
+//                    engine.Send(new MonoBreakpointEvent(new MonoBoundBreakpointsEnum(new IDebugBoundBreakpoint2[0])), MonoStepCompleteEvent.IID, engine.ThreadManager[args.Thread]);
+//                }
+//                else
+//                {
+//                    engine.Session.NextInstruction();
+//                }
             };
             engine.Session.TargetStopped += stepFinished;
             engine.Session.SetNextStatement(fileName, (int)startPosition[0].dwLine, (int)startPosition[0].dwColumn + 1);
-            engine.Session.NextInstruction();
+            lineNumberOverride = (int)startPosition[0].dwLine;
+//            engine.Session.Stop();
+//            engine.Session.NextInstruction();
+//            waiter.WaitOne();
 
             return VSConstants.S_OK;
         }

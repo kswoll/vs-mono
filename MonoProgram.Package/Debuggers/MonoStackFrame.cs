@@ -16,9 +16,9 @@ namespace MonoProgram.Package.Debuggers
 
         private readonly string documentName;       
         private readonly string functionName;
-        private readonly uint lineNumber;
         private readonly bool hasSource;
-        private readonly StackFrame frame;
+        private readonly Func<StackFrame> frame;
+        private int? lineNumberOverride;
 
         // An array of this frame's parameters
         private readonly ObjectValue[] parameters;
@@ -26,25 +26,31 @@ namespace MonoProgram.Package.Debuggers
         // An array of this frame's locals
         private readonly ObjectValue[] locals;     
 
-        public MonoStackFrame(MonoEngine engine, MonoThread thread, StackFrame frame)
+        public MonoStackFrame(MonoEngine engine, MonoThread thread, Func<StackFrame> frame)
         {
             this.engine = engine;
             this.thread = thread;
             this.frame = frame;
 
-            var allLocals = frame.GetAllLocals(EvaluationOptions.DefaultOptions);
-            parameters = frame.GetParameters(EvaluationOptions.DefaultOptions);
+            var allLocals = frame().GetAllLocals(EvaluationOptions.DefaultOptions);
+            parameters = frame().GetParameters(EvaluationOptions.DefaultOptions);
             locals = allLocals.Where(x => !parameters.Any(y => y.Name == x.Name)).ToArray();
-            lineNumber = (uint)frame.SourceLocation.Line;
-            hasSource = frame.HasDebugInfo;
-            functionName = frame.SourceLocation.MethodName;
-            documentName = frame.SourceLocation.FileName;
+            hasSource = frame().HasDebugInfo;
+            functionName = frame().SourceLocation.MethodName;
+            documentName = frame().SourceLocation.FileName;
+        }
+
+        public int LineNumber
+        {
+            get { return lineNumberOverride ?? frame().SourceLocation.Line; }
+            set { lineNumberOverride = value; }
         }
 
         // Construct a FRAMEINFO for this stack frame with the requested information.
         public void SetFrameInfo(enum_FRAMEINFO_FLAGS dwFieldSpec, out FRAMEINFO frameInfo)
         {
             frameInfo = new FRAMEINFO();
+            var frame = this.frame();
 
             // The debugger is asking for the formatted name of the function which is displayed in the callstack window.
             // There are several optional parts to this name including the module, argument types and values, and line numbers.
@@ -93,7 +99,7 @@ namespace MonoProgram.Package.Debuggers
 
                     if ((dwFieldSpec & enum_FRAMEINFO_FLAGS.FIF_FUNCNAME_LINES) != 0)
                     {
-                        frameInfo.m_bstrFuncName += " Line:" + lineNumber;
+                        frameInfo.m_bstrFuncName += " Line:" + (uint)LineNumber;
                     }
                 }
                 else
@@ -279,7 +285,7 @@ namespace MonoProgram.Package.Debuggers
 
             try
             {
-                memoryAddress = new MonoMemoryAddress(engine, (uint)frame.Address, null);
+                memoryAddress = new MonoMemoryAddress(engine, (uint)frame().Address, null);
                 return VSConstants.S_OK;
             }
             catch (ComponentException e)
@@ -311,6 +317,7 @@ namespace MonoProgram.Package.Debuggers
                 {
                     // Assume all lines begin and end at the beginning of the line.
                     // TODO: Accurate line endings
+                    var lineNumber = (uint)LineNumber;
                     TEXT_POSITION begTp = new TEXT_POSITION();
                     begTp.dwColumn = 0;
                     begTp.dwLine = lineNumber - 1;
@@ -376,7 +383,7 @@ namespace MonoProgram.Package.Debuggers
         // The name of a stack frame is typically the name of the method being executed.
         int IDebugStackFrame2.GetName(out string name)
         {
-            name = frame.SourceLocation.MethodName;
+            name = frame().SourceLocation.MethodName;
             return VSConstants.S_OK;
         }
 
@@ -413,6 +420,7 @@ namespace MonoProgram.Package.Debuggers
                                                 out string error, 
                                                 out uint pichError)
         {
+            var frame = this.frame();
             error = null;
             pichError = 0;
             try
