@@ -54,6 +54,10 @@ namespace MonoProgram.Package.Debuggers
             SetCondition(requestInfo.bpCondition);
             SetPassCount(requestInfo.bpPassCount);
 
+            // Enable(...) would have already been called before Bind
+            if (!isEnabled)
+                breakpoint.Enabled = false;
+
             lock (boundBreakpoints)
             {
                 uint address = 0;
