@@ -124,6 +124,8 @@ namespace MonoProgram.Package.Debuggers
         public int SetCondition(BP_CONDITION condition)
         {
             breakpoint.ConditionExpression = condition.bstrCondition;
+            breakpoint.BreakIfConditionChanges = condition.styleCondition == enum_BP_COND_STYLE.BP_COND_WHEN_CHANGED;
+                
             return VSConstants.S_OK;
         }
 
