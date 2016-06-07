@@ -235,11 +235,6 @@ namespace MonoProgram.Package.Debuggers
             throw new NotImplementedException();
         }
 
-        int IDebugProgram2.Continue(IDebugThread2 pThread)
-        {
-            throw new NotImplementedException();
-        }
-
         public int Step(IDebugThread2 thread, enum_STEPKIND kind, enum_STEPUNIT unit)
         {
             switch (kind)
@@ -386,9 +381,10 @@ namespace MonoProgram.Package.Debuggers
             throw new NotImplementedException();
         }
 
-        int IDebugProgram3.Continue(IDebugThread2 pThread)
+        public int Continue(IDebugThread2 pThread)
         {
-            throw new NotImplementedException();
+            Session.Continue();
+            return VSConstants.S_OK;
         }
 
         int IDebugProgram3.GetEngineInfo(out string pbstrEngine, out Guid pguidEngine)
