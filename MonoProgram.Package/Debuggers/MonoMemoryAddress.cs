@@ -14,7 +14,7 @@ namespace MonoProgram.Package.Debuggers
         public MonoMemoryAddress(MonoEngine engine, uint address, MonoDocumentContext documentContext)
         {
             this.engine = engine;
-            this.address = address;
+            this.address = 0;//address;
             this.documentContext = documentContext;
         }
 

@@ -3,6 +3,7 @@ using System.Diagnostics;
 using Microsoft.VisualStudio;
 using Microsoft.VisualStudio.Debugger.Interop;
 using Mono.Debugging.Client;
+using MonoProgram.Package.Debuggers.Events;
 using MonoProgram.Package.Utils;
 
 namespace MonoProgram.Package.Debuggers
@@ -176,7 +177,34 @@ namespace MonoProgram.Package.Debuggers
         // The sample debug engine doesn't support set next statment
         int IDebugThread2.SetNextStatement(IDebugStackFrame2 stackFrame, IDebugCodeContext2 codeContext)
         {
-            return VSConstants.E_NOTIMPL;
+            IDebugDocumentContext2 context;
+            codeContext.GetDocumentContext(out context);
+            string fileName;
+            context.GetName(enum_GETNAME_TYPE.GN_FILENAME, out fileName);
+            fileName = engine.TranslateToBuildServerPath(fileName);
+
+            var startPosition = new TEXT_POSITION[1];
+            var endPosition = new TEXT_POSITION[1];
+            context.GetStatementRange(startPosition, endPosition);
+
+            EventHandler<TargetEventArgs> stepFinished = null;
+            stepFinished = (sender, args) =>
+            {
+                if (true || args.Thread.Backtrace.GetFrame(0).SourceLocation.Line == startPosition[0].dwLine)
+                {
+                    engine.Session.TargetStopped -= stepFinished;
+                    engine.Send(new MonoBreakpointEvent(new MonoBoundBreakpointsEnum(new IDebugBoundBreakpoint2[0])), MonoStepCompleteEvent.IID, engine.ThreadManager[args.Thread]);
+                }
+                else
+                {
+                    engine.Session.NextInstruction();
+                }
+            };
+            engine.Session.TargetStopped += stepFinished;
+            engine.Session.SetNextStatement(fileName, (int)startPosition[0].dwLine, (int)startPosition[0].dwColumn + 1);
+            engine.Session.NextInstruction();
+
+            return VSConstants.S_OK;
         }
 
         // suspend a thread.

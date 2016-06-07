@@ -318,7 +318,7 @@ namespace MonoProgram.Package.Debuggers
                     endTp.dwColumn = 0;
                     endTp.dwLine = lineNumber - 1;
 
-                    docContext = new MonoDocumentContext(documentName, begTp, endTp, null);
+                    docContext = new MonoDocumentContext(engine.TranslateToLocalPath(documentName), begTp, endTp, null);
                     return VSConstants.S_OK;
                 }
             }

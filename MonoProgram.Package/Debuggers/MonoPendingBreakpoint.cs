@@ -12,7 +12,6 @@ namespace MonoProgram.Package.Debuggers
     {
         public MonoBoundBreakpoint[] BoundBreakpoints => boundBreakpoints.ToArray();
 
-        private readonly MonoDebuggerSettings settings;
         private readonly MonoBreakpointManager breakpointManager;
         private readonly IDebugBreakpointRequest2 request;
         private readonly BP_REQUEST_INFO requestInfo; 
@@ -21,9 +20,8 @@ namespace MonoProgram.Package.Debuggers
         private bool isDeleted;
         private bool isEnabled;
 
-        public MonoPendingBreakpoint(MonoDebuggerSettings settings, MonoBreakpointManager breakpointManager, IDebugBreakpointRequest2 request)
+        public MonoPendingBreakpoint(MonoBreakpointManager breakpointManager, IDebugBreakpointRequest2 request)
         {
-            this.settings = settings;
             this.breakpointManager = breakpointManager;
             this.request = request;
 
@@ -45,20 +43,12 @@ namespace MonoProgram.Package.Debuggers
 
         public int Bind()
         {
-            var docPosition = (IDebugDocumentPosition2)Marshal.GetObjectForIUnknown(requestInfo.bpLocation.unionmember2);
-            string documentName;
-            EngineUtils.CheckOk(docPosition.GetFileName(out documentName));
-
-            var localRoot = settings.SourceRoot;
-            documentName = documentName.Replace('\\', '/');
-            var remoteRoot = settings.BuildRoot;
-            documentName = remoteRoot + documentName.Substring(localRoot.Length);
-
-            var startPosition = new TEXT_POSITION[1];
-            var endPosition = new TEXT_POSITION[1];
-            EngineUtils.CheckOk(docPosition.GetRange(startPosition, endPosition));
-
+            TEXT_POSITION[] startPosition;
+            TEXT_POSITION[] endPosition;
             var engine = breakpointManager.Engine;
+            var documentName = engine.GetLocationInfo(requestInfo.bpLocation.unionmember2, out startPosition, out endPosition);
+            documentName = engine.TranslateToBuildServerPath(documentName);
+
             breakpoint = engine.Session.Breakpoints.Add(documentName, (int)startPosition[0].dwLine + 1, (int)startPosition[0].dwColumn + 1);
             breakpointManager.Add(breakpoint, this);
             SetCondition(requestInfo.bpCondition);
@@ -79,16 +69,10 @@ namespace MonoProgram.Package.Debuggers
 
         public MonoDocumentContext GetDocumentContext(uint address)
         {
-            var docPosition = (IDebugDocumentPosition2)Marshal.GetObjectForIUnknown(requestInfo.bpLocation.unionmember2);
-            string documentName;
-            EngineUtils.CheckOk(docPosition.GetFileName(out documentName));
-
-            // Get the location in the document that the breakpoint is in.
-            var startPosition = new TEXT_POSITION[1];
-            var endPosition = new TEXT_POSITION[1];
-            EngineUtils.CheckOk(docPosition.GetRange(startPosition, endPosition));           
-
-            MonoMemoryAddress codeContext = new MonoMemoryAddress(breakpointManager.Engine, address, null);
+            TEXT_POSITION[] startPosition;
+            TEXT_POSITION[] endPosition;
+            var documentName = breakpointManager.Engine.GetLocationInfo(requestInfo.bpLocation.unionmember2, out startPosition, out endPosition);
+            var codeContext = new MonoMemoryAddress(breakpointManager.Engine, address, null);
             
             return new MonoDocumentContext(documentName, startPosition[0], endPosition[0], codeContext);
         }

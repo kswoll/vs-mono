@@ -21,13 +21,13 @@ namespace MonoProgram.Package.Debuggers
     {
         public SoftDebuggerSession Session { get; private set; }
         public IDebugEventCallback2 Callback { get; private set; }
+        public MonoThreadManager ThreadManager { get; private set; }
 
         private string registryRoot;
         private ushort locale;
         private Guid programId;
         private AD_PROCESS_ID processId;
         private readonly MonoBreakpointManager breakpointManager;
-        private readonly MonoThreadManager threadManager;
         private AutoResetEvent waiter;
         private MonoDebuggerSettings settings;
         private SshCommand runCommand;
@@ -37,12 +37,57 @@ namespace MonoProgram.Package.Debuggers
         public MonoEngine()
         {
             breakpointManager = new MonoBreakpointManager(this);
-            threadManager = new MonoThreadManager(this);
+            ThreadManager = new MonoThreadManager(this);
         }
 
         ~MonoEngine()
         {
             runCommand?.Dispose();
+        }
+
+        public string TranslateToBuildServerPath(string localPath)
+        {
+            var localRoot = settings.SourceRoot;
+            var documentName = localPath.Replace('\\', '/');
+            var remoteRoot = settings.BuildRoot;
+            documentName = remoteRoot + documentName.Substring(localRoot.Length);
+            return documentName;
+        }
+
+        public string TranslateToLocalPath(string buildServerPath)
+        {
+            var localRoot = settings.SourceRoot;
+            var documentName = buildServerPath.Replace('/', '\\');
+            var remoteRoot = settings.BuildRoot;
+            documentName = localRoot + documentName.Substring(remoteRoot.Length);
+            return documentName;
+        }
+
+        public string GetDocumentName(IntPtr locationPtr)
+        {
+            TEXT_POSITION[] startPosition;
+            TEXT_POSITION[] endPosition;
+            return GetLocationInfo(locationPtr, out startPosition, out endPosition);
+        }
+
+        public string GetLocationInfo(IntPtr locationPtr, out TEXT_POSITION[] startPosition, out TEXT_POSITION[] endPosition)
+        {
+            var docPosition = (IDebugDocumentPosition2)Marshal.GetObjectForIUnknown(locationPtr);
+            var result = GetLocationInfo(docPosition, out startPosition, out endPosition);
+            Marshal.ReleaseComObject(docPosition);
+            return result;
+        }
+
+        public string GetLocationInfo(IDebugDocumentPosition2 docPosition, out TEXT_POSITION[] startPosition, out TEXT_POSITION[] endPosition)
+        {
+            string documentName;
+            EngineUtils.CheckOk(docPosition.GetFileName(out documentName));
+
+            startPosition = new TEXT_POSITION[1];
+            endPosition = new TEXT_POSITION[1];
+            EngineUtils.CheckOk(docPosition.GetRange(startPosition, endPosition));
+
+            return documentName;
         }
 
         public int EnumPrograms(out IEnumDebugPrograms2 ppEnum)
@@ -52,7 +97,7 @@ namespace MonoProgram.Package.Debuggers
 
         public int CreatePendingBreakpoint(IDebugBreakpointRequest2 request, out IDebugPendingBreakpoint2 pendingBreakpoint)
         {
-            pendingBreakpoint = new MonoPendingBreakpoint(settings, breakpointManager, request);
+            pendingBreakpoint = new MonoPendingBreakpoint(breakpointManager, request);
 
             return VSConstants.S_OK;
         }
@@ -115,7 +160,7 @@ namespace MonoProgram.Package.Debuggers
             stepFinished = (sender, args) =>
             {
                 Session.TargetStopped -= stepFinished;
-                Send(new MonoBreakpointEvent(new MonoBoundBreakpointsEnum(new IDebugBoundBreakpoint2[0])), MonoStepCompleteEvent.IID, threadManager[args.Thread]);
+                Send(new MonoBreakpointEvent(new MonoBoundBreakpointsEnum(new IDebugBoundBreakpoint2[0])), MonoStepCompleteEvent.IID, ThreadManager[args.Thread]);
             };
             Session.TargetStopped += stepFinished;
 
@@ -125,7 +170,7 @@ namespace MonoProgram.Package.Debuggers
 
         int IDebugProgram2.EnumThreads(out IEnumDebugThreads2 ppEnum)
         {
-            var threads = threadManager.All.ToArray();
+            var threads = ThreadManager.All.ToArray();
 
             var threadObjects = new MonoThread[threads.Length];
             for (int i = 0; i < threads.Length; i++)
@@ -207,7 +252,7 @@ namespace MonoProgram.Package.Debuggers
             stepFinished = (sender, args) =>
             {
                 Session.TargetStopped -= stepFinished;
-                Send(new MonoStepCompleteEvent(), MonoStepCompleteEvent.IID, threadManager[args.Thread]);
+                Send(new MonoStepCompleteEvent(), MonoStepCompleteEvent.IID, ThreadManager[args.Thread]);
             };
             Session.TargetStopped += stepFinished;
 
@@ -220,12 +265,20 @@ namespace MonoProgram.Package.Debuggers
                             Session.NextInstruction();
                             break;
                         default:
-                            Session.StepLine();
+                            Session.NextLine();
                             break;
                     }
                     break;
                 case enum_STEPKIND.STEP_INTO:
-                    Session.StepInstruction();
+                    switch (unit)
+                    {
+                        case enum_STEPUNIT.STEP_INSTRUCTION:
+                            Session.StepInstruction();
+                            break;
+                        default:
+                            Session.StepLine();
+                            break;
+                    }
                     break;
                 case enum_STEPKIND.STEP_OUT:
                     Session.Finish();
@@ -239,9 +292,16 @@ namespace MonoProgram.Package.Debuggers
             throw new NotImplementedException();
         }
 
-        int IDebugProgram2.EnumCodeContexts(IDebugDocumentPosition2 pDocPos, out IEnumDebugCodeContexts2 ppEnum)
+        public int EnumCodeContexts(IDebugDocumentPosition2 pDocPos, out IEnumDebugCodeContexts2 ppEnum)
         {
-            throw new NotImplementedException();
+            TEXT_POSITION[] startPosition;
+            TEXT_POSITION[] endPosition;
+            var documentName = breakpointManager.Engine.GetLocationInfo(pDocPos, out startPosition, out endPosition);
+
+            var textPosition = new TEXT_POSITION { dwLine = startPosition[0].dwLine + 1 };
+            var documentContext = new MonoDocumentContext(documentName, textPosition, textPosition, null);
+            ppEnum = new MonoCodeContextEnum(new[] { new MonoMemoryAddress(this, 0, documentContext) });
+            return VSConstants.S_OK;
         }
 
         int IDebugProgram2.GetMemoryBytes(out IDebugMemoryBytes2 ppMemoryBytes)
@@ -266,7 +326,9 @@ namespace MonoProgram.Package.Debuggers
 
         int IDebugProgram2.EnumCodePaths(string pszHint, IDebugCodeContext2 pStart, IDebugStackFrame2 pFrame, int fSource, out IEnumCodePaths2 ppEnum, out IDebugCodeContext2 ppSafety)
         {
-            throw new NotImplementedException();
+            ppEnum = null;
+            ppSafety = null;
+            return VSConstants.E_NOTIMPL;
         }
 
         int IDebugProgram2.WriteDump(enum_DUMPTYPE DUMPTYPE, string pszDumpUrl)
@@ -330,11 +392,6 @@ namespace MonoProgram.Package.Debuggers
         }
 
         int IDebugProgram3.GetEngineInfo(out string pbstrEngine, out Guid pguidEngine)
-        {
-            throw new NotImplementedException();
-        }
-
-        int IDebugProgram3.EnumCodeContexts(IDebugDocumentPosition2 pDocPos, out IEnumDebugCodeContexts2 ppEnum)
         {
             throw new NotImplementedException();
         }
@@ -436,7 +493,9 @@ namespace MonoProgram.Package.Debuggers
                 var targetExe = directory + "/" + Path.GetFileName(exe);
                 connection.Ssh.RunCommand("cd ~");
                 Log("Launching application");
-                runCommand = connection.Ssh.BeginCommand($"mono --debug=mdb-optimizations --debugger-agent=transport=dt_socket,address=0.0.0.0:6438,server=y {targetExe}", this.outputWindow, ar =>
+                var commandText = $"mono --debug=mdb-optimizations --debugger-agent=transport=dt_socket,address=0.0.0.0:6438,server=y {targetExe}";
+                connection.Ssh.RunCommand("$(ps auxww | grep '{" + commandText + "}' | awk '{print $2}')", this.outputWindow);
+                runCommand = connection.Ssh.BeginCommand(commandText, this.outputWindow, ar =>
                 {
 // Persistent connection
 //                    sshClient.Disconnect();
@@ -451,10 +510,8 @@ namespace MonoProgram.Package.Debuggers
             Session.TargetReady += (sender, eventArgs) =>
             {
                 var activeThread = Session.ActiveThread;
-                threadManager.Add(activeThread, new MonoThread(this, activeThread));
-
-                MonoEngineCreateEvent.Send(this);
-                MonoProgramCreateEvent.Send(this);                
+                ThreadManager.Add(activeThread, new MonoThread(this, activeThread));
+//                Session.Stop();
             };
             Session.ExceptionHandler = exception => true;
             Session.TargetExceptionThrown += (sender, x) => Console.WriteLine(x.Type);
@@ -462,8 +519,8 @@ namespace MonoProgram.Package.Debuggers
             Session.TargetUnhandledException += (sender, x) => Console.WriteLine(x.Type);
             Session.LogWriter = (stderr, text) => Console.WriteLine(text);
             Session.OutputWriter = (stderr, text) => Console.WriteLine(text);
-            Session.TargetThreadStarted += (sender, x) => threadManager.Add(x.Thread, new MonoThread(this, x.Thread));
-            Session.TargetThreadStopped += (sender, x) => threadManager.Remove(x.Thread);
+            Session.TargetThreadStarted += (sender, x) => ThreadManager.Add(x.Thread, new MonoThread(this, x.Thread));
+            Session.TargetThreadStopped += (sender, x) => ThreadManager.Remove(x.Thread);
             Session.TargetStopped += (sender, x) => Console.WriteLine(x.Type);
             Session.TargetStarted += (sender, x) => Console.WriteLine();
             Session.TargetSignaled += (sender, x) => Console.WriteLine(x.Type);
@@ -472,7 +529,7 @@ namespace MonoProgram.Package.Debuggers
             {
                 var breakpoint = x.BreakEvent as Breakpoint;
                 var pendingBreakpoint = breakpointManager[breakpoint];
-                Send(new MonoBreakpointEvent(new MonoBoundBreakpointsEnum(pendingBreakpoint.BoundBreakpoints)), MonoBreakpointEvent.IID, threadManager[x.Thread]);
+                Send(new MonoBreakpointEvent(new MonoBoundBreakpointsEnum(pendingBreakpoint.BoundBreakpoints)), MonoBreakpointEvent.IID, ThreadManager[x.Thread]);
             };
 
             processId = new AD_PROCESS_ID();
@@ -519,6 +576,9 @@ namespace MonoProgram.Package.Debuggers
                 Session.Run(new SoftDebuggerStartInfo(new SoftDebuggerConnectArgs("", ipAddress, 6438)), 
                     new DebuggerSessionOptions { EvaluationOptions = EvaluationOptions.DefaultOptions, ProjectAssembliesOnly = false });
             });
+
+            MonoEngineCreateEvent.Send(this);
+            MonoProgramCreateEvent.Send(this);                
 
             return VSConstants.S_OK;
         }
