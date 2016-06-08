@@ -9,7 +9,7 @@
     <SortOrder>1000</SortOrder>
     <TemplateID>58a677b3-62c1-46c3-99f7-6ae1f71374be</TemplateID>
     <CreateNewFolder>true</CreateNewFolder>
-    <DefaultName>MonoProgram.Template</DefaultName>
+    <DefaultName>MonoProgram</DefaultName>
     <ProvideDefaultName>true</ProvideDefaultName>
   </TemplateData>
   <TemplateContent>
