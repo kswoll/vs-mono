@@ -104,17 +104,33 @@ namespace MonoProgram.Package.Debuggers
 
         public int SetException(EXCEPTION_INFO[] pException)
         {
-            throw new NotImplementedException();
+            if (pException[0].dwState.HasFlag(enum_EXCEPTION_STATE.EXCEPTION_STOP_FIRST_CHANCE))
+            {
+                var catchpoint = Session.Breakpoints.AddCatchpoint(pException[0].bstrExceptionName);
+                breakpointManager.Add(catchpoint);
+                return VSConstants.S_OK;
+            }
+            else
+            {
+                return RemoveSetException(pException);
+            }
         }
 
         public int RemoveSetException(EXCEPTION_INFO[] pException)
         {
-            throw new NotImplementedException();
+            if (breakpointManager.ContainsCatchpoint(pException[0].bstrExceptionName)) 
+            {
+                breakpointManager.Remove(breakpointManager[pException[0].bstrExceptionName]);
+                Session.Breakpoints.RemoveCatchpoint(pException[0].bstrExceptionName);
+            }
+            return VSConstants.S_OK;
         }
 
         public int RemoveAllSetExceptions(ref Guid guidType)
         {
-            throw new NotImplementedException();
+            foreach (var catchpoint in breakpointManager.Catchpoints)
+                Session.Breakpoints.RemoveCatchpoint(catchpoint.ExceptionName);
+            return VSConstants.S_OK;
         }
 
         public int GetEngineId(out Guid engineGuid)
@@ -311,7 +327,8 @@ namespace MonoProgram.Package.Debuggers
 
         int IDebugProgram2.EnumModules(out IEnumDebugModules2 ppEnum)
         {
-            throw new NotImplementedException();
+            ppEnum = new MonoModuleEnum(new[] { new MonoModule(this) });
+            return VSConstants.S_OK;
         }
 
         int IDebugProgram2.GetENCUpdate(out object ppUpdate)
@@ -510,7 +527,6 @@ namespace MonoProgram.Package.Debuggers
 //                Session.Stop();
             };
             Session.ExceptionHandler = exception => true;
-            Session.TargetExceptionThrown += (sender, x) => Console.WriteLine(x.Type);
             Session.TargetExited += (sender, x) => Send(new MonoProgramDestroyEvent((uint?)x.ExitCode ?? 0), MonoProgramDestroyEvent.IID, null);
             Session.TargetUnhandledException += (sender, x) => Console.WriteLine(x.Type);
             Session.LogWriter = (stderr, text) => Console.WriteLine(text);
@@ -521,6 +537,11 @@ namespace MonoProgram.Package.Debuggers
             Session.TargetStarted += (sender, x) => Console.WriteLine();
             Session.TargetSignaled += (sender, x) => Console.WriteLine(x.Type);
             Session.TargetInterrupted += (sender, x) => Console.WriteLine(x.Type);
+            Session.TargetExceptionThrown += (sender, x) =>
+            {
+//                var catchpoint = x.BreakEvent as Catchpoint;
+                Send(new MonoBreakpointEvent(new MonoBoundBreakpointsEnum(new IDebugBoundBreakpoint2[0])), MonoStepCompleteEvent.IID, ThreadManager[x.Thread]);
+            };
             Session.TargetHitBreakpoint += (sender, x) =>
             {
                 var breakpoint = x.BreakEvent as Breakpoint;

@@ -287,7 +287,7 @@ namespace MonoProgram.Package.Debuggers
                 if ((dwFields & (uint)enum_THREADPROPERTY_FIELDS100.TPF100_DISPLAY_NAME) != 0)
                 {
                     // Thread display name is being requested
-                    props[0].bstrDisplayName = "<thread name from sample engine>";
+                    props[0].bstrDisplayName = debuggedThread.Name;
                     props[0].dwFields |= (uint)enum_THREADPROPERTY_FIELDS100.TPF100_DISPLAY_NAME;
 
                     // Give this display name a higher priority than the default (0)

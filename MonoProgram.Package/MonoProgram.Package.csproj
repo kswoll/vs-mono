@@ -85,6 +85,8 @@
     <Compile Include="Debuggers\MonoExpression.cs" />
     <Compile Include="Debuggers\MonoFrameInfoEnum.cs" />
     <Compile Include="Debuggers\MonoMemoryAddress.cs" />
+    <Compile Include="Debuggers\MonoModule.cs" />
+    <Compile Include="Debuggers\MonoModuleEnum.cs" />
     <Compile Include="Debuggers\MonoPendingBreakpoint.cs" />
     <Compile Include="Debuggers\MonoProgramNode.cs" />
     <Compile Include="Debuggers\MonoProgramProvider.cs" />

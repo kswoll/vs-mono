@@ -7,8 +7,12 @@ namespace MonoProgram.Package.Debuggers
     {
         public MonoEngine Engine { get; }
         public MonoPendingBreakpoint this[BreakEvent breakEvent] => breakpoints[breakEvent];
+        public Catchpoint this[string exceptionName] => catchpoints[exceptionName];
+        public IEnumerable<Catchpoint> Catchpoints => catchpoints.Values;
+        public bool ContainsCatchpoint(string exceptionName) => catchpoints.ContainsKey(exceptionName);
 
         private readonly Dictionary<BreakEvent, MonoPendingBreakpoint> breakpoints = new Dictionary<BreakEvent, MonoPendingBreakpoint>();
+        private readonly Dictionary<string, Catchpoint> catchpoints = new Dictionary<string, Catchpoint>();
 
         public MonoBreakpointManager(MonoEngine engine)
         {
@@ -24,6 +28,16 @@ namespace MonoProgram.Package.Debuggers
         {
             Engine.Session.Breakpoints.Remove(breakEvent);
             breakpoints.Remove(breakEvent);
+        }
+
+        public void Add(Catchpoint catchpoint)
+        {
+            catchpoints[catchpoint.ExceptionName] = catchpoint;
+        }
+
+        public void Remove(Catchpoint catchpoint)
+        {
+            catchpoints.Remove(catchpoint.ExceptionName);
         }
     }
 }
