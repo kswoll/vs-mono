@@ -2,8 +2,10 @@
 <PackageManifest Version="2.0.0" xmlns="http://schemas.microsoft.com/developer/vsx-schema/2011" xmlns:d="http://schemas.microsoft.com/developer/vsx-schema-design/2011">
     <Metadata>
         <Identity Id="MonoProgram.Package.Kirk Woll.2ee15310-b22c-4fd1-874f-3d0e5cb43e90" Version="1.0" Language="en-US" Publisher="Kirk Woll" />
-        <DisplayName>MonoProgram.Package</DisplayName>
-        <Description>Empty VSIX Project.</Description>
+        <DisplayName>vs-mono</DisplayName>
+        <Description xml:space="preserve">A plugin that provides a custom C# project flavor that allows you to build and remote-debug mono programs hosted on a non-windows machine.  </Description>
+        <License>LICENSE</License>
+        <Tags>mono, debugger, project, template</Tags>
     </Metadata>
     <Installation>
         <InstallationTarget Id="Microsoft.VisualStudio.Community" Version="[14.0]" />

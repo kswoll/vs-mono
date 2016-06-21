@@ -94,6 +94,7 @@
     <Compile Include="Debuggers\MonoPropertyEnum.cs" />
     <Compile Include="Debuggers\MonoPropertyEnumerator.cs" />
     <Compile Include="Debuggers\MonoPropertyInfoEnum.cs" />
+    <Compile Include="Debuggers\MonoSourceMapping.cs" />
     <Compile Include="Debuggers\MonoStackFrame.cs" />
     <Compile Include="Debuggers\MonoThread.cs" />
     <Compile Include="Debuggers\MonoThreadEnum.cs" />
@@ -135,6 +136,10 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="Key.snk" />
+    <Content Include="LICENSE">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      <IncludeInVSIX>true</IncludeInVSIX>
+    </Content>
     <None Include="packages.config" />
     <None Include="source.extension.vsixmanifest">
       <SubType>Designer</SubType>

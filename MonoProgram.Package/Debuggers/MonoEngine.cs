@@ -47,18 +47,20 @@ namespace MonoProgram.Package.Debuggers
 
         public string TranslateToBuildServerPath(string localPath)
         {
-            var localRoot = settings.SourceRoot;
+            var sourceMapping = settings.SourceMappings.First(x => localPath.StartsWith(x.SourceRoot, StringComparison.InvariantCultureIgnoreCase));
+            var localRoot = sourceMapping.SourceRoot;
             var documentName = localPath.Replace('\\', '/');
-            var remoteRoot = settings.BuildRoot;
+            var remoteRoot = sourceMapping.BuildRoot;
             documentName = remoteRoot + documentName.Substring(localRoot.Length);
             return documentName;
         }
 
         public string TranslateToLocalPath(string buildServerPath)
         {
-            var localRoot = settings.SourceRoot;
+            var sourceMapping = settings.SourceMappings.First(x => buildServerPath.StartsWith(x.BuildRoot, StringComparison.InvariantCultureIgnoreCase));
+            var localRoot = sourceMapping.SourceRoot;
             var documentName = buildServerPath.Replace('/', '\\');
-            var remoteRoot = settings.BuildRoot;
+            var remoteRoot = sourceMapping.BuildRoot;
             documentName = localRoot + documentName.Substring(remoteRoot.Length);
             return documentName;
         }
@@ -528,7 +530,7 @@ namespace MonoProgram.Package.Debuggers
             };
             Session.ExceptionHandler = exception => true;
             Session.TargetExited += (sender, x) => Send(new MonoProgramDestroyEvent((uint?)x.ExitCode ?? 0), MonoProgramDestroyEvent.IID, null);
-            Session.TargetUnhandledException += (sender, x) => Console.WriteLine(x.Type);
+            Session.TargetUnhandledException += (sender, x) => Log(x.Backtrace.ToString());
             Session.LogWriter = (stderr, text) => Console.WriteLine(text);
             Session.OutputWriter = (stderr, text) => Console.WriteLine(text);
             Session.TargetThreadStarted += (sender, x) => ThreadManager.Add(x.Thread, new MonoThread(this, x.Thread));

@@ -1,50 +1,44 @@
-﻿namespace MonoProgram.Package.Debuggers
+﻿using System.Collections.Generic;
+using System.Linq;
+
+namespace MonoProgram.Package.Debuggers
 {
     public class MonoDebuggerSettings
     {
-        public string Host { get; set; } 
-        public string Username { get; set; }
-        public string Password { get; set; }
+        public string Host { get; }
+        public string Username { get; }
+        public string Password { get; }
+        public IReadOnlyList<MonoSourceMapping> SourceMappings { get; }
 
-        /// <summary>
-        /// The path to the directory that contains the .csproj file.
-        /// </summary>
-        public string SourceRoot { get; set; }
-
-        /// <summary>
-        /// The path to the directory on the build server that contains the .csproj file.
-        /// </summary>
-        public string BuildRoot { get; set; }
-
-        public MonoDebuggerSettings(string host, string username, string password, string sourceRoot, string buildRoot)
+        public MonoDebuggerSettings(string host, string username, string password, params MonoSourceMapping[] sourceMappings)
         {
             Host = host;
             Username = username;
             Password = password;
-            SourceRoot = sourceRoot;
-            BuildRoot = buildRoot;
+            SourceMappings = sourceMappings;
         }
 
         public static MonoDebuggerSettings Parse(string options)
         {
             var parts = options.Split(';');
 
-            var sourceRoot = parts[0];
-            var buildRoot = parts[1];
+            var sourceMappingsPart = parts[0];
+            var sourceMappingsChunks = sourceMappingsPart.Split('&');
+            var sourceMappings = sourceMappingsChunks.Select(x => x.Split('|')).Select(x => new MonoSourceMapping(x[0], x[1])).ToArray();
 
-            var hostInformation = parts[2];
+            var hostInformation = parts[1];
             var credentialsAndHost = hostInformation.Split('@');
             var host = credentialsAndHost[1];
             var usernameAndPassword = credentialsAndHost[0].Split(':');
             var username = usernameAndPassword[0];
             var password = usernameAndPassword[1];
 
-            return new MonoDebuggerSettings(host, username, password, sourceRoot, buildRoot);
+            return new MonoDebuggerSettings(host, username, password, sourceMappings);
         }
 
         public override string ToString()
         {
-            return $"{SourceRoot};{BuildRoot};{Username}:{Password}@{Host}";
+            return $"{string.Join("&", SourceMappings.Select(x => $"{x.SourceRoot}|{x.BuildRoot}"))};{Username}:{Password}@{Host}";
         }
     }
 }

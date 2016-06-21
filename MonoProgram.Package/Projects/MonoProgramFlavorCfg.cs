@@ -4,7 +4,6 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
-using System.Threading.Tasks;
 using System.Xml;
 using EnvDTE;
 using Microsoft.VisualStudio;
@@ -28,6 +27,7 @@ namespace MonoProgram.Package.Projects
         /// CustomPropertyPageProjectFlavorCfg.
         /// </summary>
         private static readonly Dictionary<IVsCfg, MonoProgramFlavorCfg> cfgs = new Dictionary<IVsCfg, MonoProgramFlavorCfg>();
+        private static readonly Dictionary<Project, MonoProgramFlavorCfg> cfgsByDteProject = new Dictionary<Project, MonoProgramFlavorCfg>();
 
         private readonly MonoProgramProjectFlavor project;
         private readonly IVsCfg baseProjectCfg;
@@ -44,6 +44,7 @@ namespace MonoProgram.Package.Projects
             this.baseProjectCfg = baseProjectCfg;
             this.innerProjectFlavorCfg = innerProjectFlavorCfg;
             cfgs.Add(baseProjectCfg, this);
+            cfgsByDteProject[GetDTEProject(project)] = this;
 
             var debugGuid = typeof(IVsDebuggableProjectCfg).GUID;
             IntPtr baseDebugConfigurationPtr;
@@ -319,7 +320,7 @@ namespace MonoProgram.Package.Projects
             }
 
             // Forward the call to inner flavor(s)
-            if (innerProjectFlavorCfg != null && innerProjectFlavorCfg is IPersistXMLFragment)
+            if (innerProjectFlavorCfg is IPersistXMLFragment)
             {
                 return ((IPersistXMLFragment)innerProjectFlavorCfg).Save(ref guidFlavor, storage, out pbstrXMLFragment, fClearDirty);
             }
@@ -421,9 +422,17 @@ namespace MonoProgram.Package.Projects
 	        var fileName = dteProject.Properties.Item("OutputFileName").Value.ToString();
 	        var outputFile = Path.Combine(dir, fileName);
 
-	        var sourceRoot = projectFolder;
-	        var buildRoot = this[MonoPropertyPage.BuildFolderProperty].NullIfEmpty() ?? ConvertToUnixPath(sourceRoot);
-            var settings = new MonoDebuggerSettings(this[MonoPropertyPage.DebugHostProperty], this[MonoPropertyPage.DebugUsernameProperty], this[MonoPropertyPage.DebugPasswordProperty], sourceRoot, buildRoot);
+	        var sourceMappings = new List<MonoSourceMapping>();
+	        foreach (Project currentProject in dteProject.Collection)
+	        {
+	            var cfg = cfgsByDteProject[currentProject];
+	            var sourceRoot = Path.GetDirectoryName(currentProject.FullName);
+	            var buildRoot = cfg[MonoPropertyPage.BuildFolderProperty].NullIfEmpty() ?? ConvertToUnixPath(sourceRoot);
+                sourceMappings.Add(new MonoSourceMapping(sourceRoot, buildRoot));
+	        }
+//	        var sourceRoot = projectFolder;
+//	        var buildRoot = this[MonoPropertyPage.BuildFolderProperty].NullIfEmpty() ?? ConvertToUnixPath(sourceRoot);
+            var settings = new MonoDebuggerSettings(this[MonoPropertyPage.DebugHostProperty], this[MonoPropertyPage.DebugUsernameProperty], this[MonoPropertyPage.DebugPasswordProperty], sourceMappings.ToArray());
 
             var debugger = (IVsDebugger4)project.Package.GetGlobalService<IVsDebugger>();
             var debugTargets = new VsDebugTargetInfo4[1];
@@ -485,10 +494,12 @@ namespace MonoProgram.Package.Projects
                 var arguments = $"/C {bash} --init-file {ConvertToUnixPath(scriptFile)}";
                 File.WriteAllText(scriptFile, script);
 
-                var process = new System.Diagnostics.Process();
-                process.StartInfo = new ProcessStartInfo("CMD", arguments)
+                var process = new System.Diagnostics.Process
                 {
-                    WindowStyle = ProcessWindowStyle.Hidden
+                    StartInfo = new ProcessStartInfo("CMD", arguments)
+                    {
+                        WindowStyle = ProcessWindowStyle.Hidden
+                    }
                 };
                 process.Start();
                 process.WaitForExit();
