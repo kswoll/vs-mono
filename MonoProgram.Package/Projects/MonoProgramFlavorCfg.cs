@@ -34,7 +34,9 @@ namespace MonoProgram.Package.Projects
         private readonly IVsProjectFlavorCfg innerProjectFlavorCfg;
         private readonly IVsDebuggableProjectCfg baseDebugConfiguration;
         private readonly Dictionary<string, string> propertiesList = new Dictionary<string, string>();
+        private readonly Dictionary<uint, IVsBuildStatusCallback> callbacks = new Dictionary<uint, IVsBuildStatusCallback>();
 
+        private uint callbackCookieCounter;
         private bool isClosed;
         private bool isDirty;
 
@@ -461,16 +463,25 @@ namespace MonoProgram.Package.Projects
             return VSConstants.S_OK;
         }
 
+        private void UpdateBuildStatus(int status)
+        {
+            foreach (var callback in callbacks.Values.ToArray())
+            {
+                callback.BuildEnd(status);
+            }            
+        }
+
         public int AdviseBuildStatusCallback(IVsBuildStatusCallback callback, out uint pdwCookie)
         {
-            callback.BuildEnd(1);
-            pdwCookie = 0;
+            pdwCookie = ++callbackCookieCounter;
+            callbacks[callbackCookieCounter] = callback;
             return VSConstants.S_OK;
         }
 
         public int UnadviseBuildStatusCallback(uint dwCookie)
         {
-            throw new NotImplementedException();
+            callbacks.Remove(dwCookie);
+            return VSConstants.S_OK;
         }
 
         public int StartBuild(IVsOutputWindowPane outputPane, uint dwOptions)
@@ -483,13 +494,21 @@ namespace MonoProgram.Package.Projects
             // If using Windows Bash...
             if (string.IsNullOrEmpty(buildHost))
             {
+                var bash = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Windows), "Sysnative", "bash.exe");
+                if (!File.Exists(bash))
+                {
+                    outputPane.LogError(dteProject.FullName, $"Error: You must set up a build server on the 'Mono' project property page.");
+
+                    UpdateBuildStatus(0);
+                    return VSConstants.S_FALSE;
+                }
+
                 var bashProjectFolder = ConvertToUnixPath(projectFolder);
                 var outputFile = Path.GetTempFileName();
                 var script = $@"cd ""{bashProjectFolder}""
     xbuild > ""{ConvertToUnixPath(outputFile)}""
     exit
     ".Replace("\r\n", "\n");
-                var bash = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Windows), "Sysnative", "bash.exe");
                 var scriptFile = Path.GetTempFileName();
                 var arguments = $"/C {bash} --init-file {ConvertToUnixPath(scriptFile)}";
                 File.WriteAllText(scriptFile, script);
@@ -570,6 +589,7 @@ namespace MonoProgram.Package.Projects
                     outputPane.Log($"Copying build artifacts to the output folder: {outputFolder}");
 
                     var buildServerOutputPath = buildFolder + "/" + FileUtils.ToRelativePath(projectFolder, outputFolder).Replace("\\", "/");
+                    client.CreateFullDirectory(buildServerOutputPath);
                     client.ChangeDirectory(buildServerOutputPath);
                     foreach (var file in client.ListDirectory(".").Where(x => x.IsRegularFile))
                     {
@@ -584,7 +604,7 @@ namespace MonoProgram.Package.Projects
                 }
             }
 
-
+            UpdateBuildStatus(1);
             return VSConstants.S_OK;
         }
 

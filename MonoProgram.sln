@@ -7,6 +7,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MonoProgram.Package", "Mono
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MonoProgram.Template", "MonoProgram.Template\MonoProgram.Template.csproj", "{39E2F20B-4351-43E7-B137-80719E138050}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MonoLibrary.Template", "MonoLibrary.Template\MonoLibrary.Template.csproj", "{69625DB2-D0FB-4B3E-9BA3-AA83F87AFEC9}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -21,6 +23,10 @@ Global
 		{39E2F20B-4351-43E7-B137-80719E138050}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{39E2F20B-4351-43E7-B137-80719E138050}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{39E2F20B-4351-43E7-B137-80719E138050}.Release|Any CPU.Build.0 = Release|Any CPU
+		{69625DB2-D0FB-4B3E-9BA3-AA83F87AFEC9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{69625DB2-D0FB-4B3E-9BA3-AA83F87AFEC9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{69625DB2-D0FB-4B3E-9BA3-AA83F87AFEC9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{69625DB2-D0FB-4B3E-9BA3-AA83F87AFEC9}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

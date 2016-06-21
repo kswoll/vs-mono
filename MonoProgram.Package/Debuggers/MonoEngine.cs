@@ -1,7 +1,6 @@
 ﻿using System;
 using System.IO;
 using System.Linq;
-using System.Net;
 using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
@@ -19,12 +18,11 @@ namespace MonoProgram.Package.Debuggers
     [Guid("D78CF801-CE2A-499B-BF1F-C81742877A34")]
     public class MonoEngine : IDebugEngine2, IDebugProgram3, IDebugEngineLaunch2, IDebugSymbolSettings100
     {
+        public MonoThreadManager ThreadManager { get; }
+
         public SoftDebuggerSession Session { get; private set; }
         public IDebugEventCallback2 Callback { get; private set; }
-        public MonoThreadManager ThreadManager { get; private set; }
 
-        private string registryRoot;
-        private ushort locale;
         private Guid programId;
         private AD_PROCESS_ID processId;
         private readonly MonoBreakpointManager breakpointManager;
@@ -157,13 +155,11 @@ namespace MonoProgram.Package.Debuggers
 
         public int SetLocale(ushort languageId)
         {
-            this.locale = languageId;
             return VSConstants.S_OK;
         }
 
         public int SetRegistryRoot(string registryRoot)
         {
-            this.registryRoot = registryRoot;
             return VSConstants.S_OK;
         }
 

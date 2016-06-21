@@ -300,6 +300,13 @@
   </ItemGroup>
   <ItemGroup />
   <ItemGroup>
+    <ProjectReference Include="..\MonoLibrary.Template\MonoLibrary.Template.csproj">
+      <Project>{69625db2-d0fb-4b3e-9ba3-aa83f87afec9}</Project>
+      <Name>MonoLibrary.Template</Name>
+      <IncludeOutputGroupsInVSIX>TemplateProjectOutputGroup%3b</IncludeOutputGroupsInVSIX>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+      <VSIXSubPath>ProjectTemplates</VSIXSubPath>
+    </ProjectReference>
     <ProjectReference Include="..\MonoProgram.Template\MonoProgram.Template.csproj">
       <Project>{39E2F20B-4351-43E7-B137-80719E138050}</Project>
       <Name>MonoProgram.Template</Name>

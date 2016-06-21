@@ -42,11 +42,12 @@ namespace MonoProgram.Package.Utils
             return command;
         }
 
-        public static void RunCommand(this SshClient ssh, string commandText, IVsOutputWindowPane outputPane)
+        public static int RunCommand(this SshClient ssh, string commandText, IVsOutputWindowPane outputPane)
         {
             IAsyncResult asyncResult;
             var command = ssh.BeginCommand(commandText, outputPane, out asyncResult);
             command.EndExecute(asyncResult);
+            return command.ExitStatus;
         }
     }
 }
