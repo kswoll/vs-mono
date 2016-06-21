@@ -439,7 +439,7 @@ namespace MonoProgram.Package.Projects
 	        debugTargets[0].LaunchFlags = grfLaunch;
             debugTargets[0].dlo = (uint)DEBUG_LAUNCH_OPERATION.DLO_CreateProcess;
             debugTargets[0].bstrExe = outputFile;
-	        debugTargets[0].bstrCurDir = this[MonoPropertyPage.DebugDestinationProperty];
+	        debugTargets[0].bstrCurDir = this[MonoPropertyPage.DebugDestinationProperty].Trim('/');     // If the user has a slash on either side, just get rid of it
 	        debugTargets[0].bstrOptions = settings.ToString();
             debugTargets[0].guidLaunchDebugEngine = new Guid(Guids.EngineId);
 
