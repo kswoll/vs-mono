@@ -31,6 +31,7 @@ namespace MonoProgram.Package.Debuggers
         private SshCommand runCommand;
         private Connection connection;
         private IVsOutputWindowPane outputWindow;
+        private IAsyncResult runCommandAsyncResult;
 
         public MonoEngine()
         {
@@ -506,12 +507,7 @@ namespace MonoProgram.Package.Debuggers
                 Log("Launching application");
                 var commandText = $"mono --debug=mdb-optimizations --debugger-agent=transport=dt_socket,address=0.0.0.0:6438,server=y {targetExe}";
                 connection.Ssh.RunCommand("kill $(ps auxww | grep '" + commandText + "' | awk '{print $2}')", this.outputWindow, null);
-                runCommand = connection.Ssh.BeginCommand(commandText, this.outputWindow, null, ar =>
-                {
-// Persistent connection
-//                    sshClient.Disconnect();
-//                    sshClient.Dispose();
-                });
+                runCommand = connection.Ssh.BeginCommand(commandText, this.outputWindow, out runCommandAsyncResult);
 
                 // Trigger that the app is now running for whomever might be waiting for that signal
                 waiter.Set();
@@ -525,12 +521,19 @@ namespace MonoProgram.Package.Debuggers
 //                Session.Stop();
             };
             Session.ExceptionHandler = exception => true;
-            Session.TargetExited += (sender, x) => Send(new MonoProgramDestroyEvent((uint?)x.ExitCode ?? 0), MonoProgramDestroyEvent.IID, null);
+            Session.TargetExited += (sender, x) =>
+            {
+//                runCommand.EndExecute(runCommandAsyncResult);
+                Send(new MonoProgramDestroyEvent((uint?)x.ExitCode ?? 0), MonoProgramDestroyEvent.IID, null);
+            };
             Session.TargetUnhandledException += (sender, x) => Log(x.Backtrace.ToString());
             Session.LogWriter = (stderr, text) => Console.WriteLine(text);
             Session.OutputWriter = (stderr, text) => Console.WriteLine(text);
             Session.TargetThreadStarted += (sender, x) => ThreadManager.Add(x.Thread, new MonoThread(this, x.Thread));
-            Session.TargetThreadStopped += (sender, x) => ThreadManager.Remove(x.Thread);
+            Session.TargetThreadStopped += (sender, x) =>
+            {
+                ThreadManager.Remove(x.Thread);
+            };
             Session.TargetStopped += (sender, x) => Console.WriteLine(x.Type);
             Session.TargetStarted += (sender, x) => Console.WriteLine();
             Session.TargetSignaled += (sender, x) => Console.WriteLine(x.Type);

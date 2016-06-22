@@ -1,6 +1,7 @@
 ﻿using System;
 using System.IO;
 using System.Text.RegularExpressions;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.VisualStudio.Shell.Interop;
 using Renci.SshNet;
@@ -9,35 +10,72 @@ namespace MonoProgram.Package.Utils
 {
     public static class SshExtensions
     {
-        public static SshCommand BeginCommand(this SshClient ssh, string commandText, IVsOutputWindowPane outputPane, string project)
+        public static SshCommand BeginCommand(this SshClient ssh, string commandText, IVsOutputWindowPane outputPane)
         {
             IAsyncResult asyncResult;
-            return ssh.BeginCommand(commandText, outputPane, project, out asyncResult);
+            return ssh.BeginCommand(commandText, outputPane, out asyncResult);
         }
 
-        public static SshCommand BeginCommand(this SshClient ssh, string commandText, IVsOutputWindowPane outputPane, string project, AsyncCallback callback)
+        public static SshCommand BeginCommand(this SshClient ssh, string commandText, IVsOutputWindowPane outputPane, AsyncCallback callback)
         {
             IAsyncResult asyncResult;
-            return ssh.BeginCommand(commandText, outputPane, project, out asyncResult);
+            return ssh.BeginCommand(commandText, outputPane, out asyncResult);
         }
 
-        public static SshCommand BeginCommand(this SshClient ssh, string commandText, IVsOutputWindowPane outputPane, string project, out IAsyncResult asyncResult)
+        public static SshCommand BeginCommand(this SshClient ssh, string commandText, IVsOutputWindowPane outputPane, out IAsyncResult asyncResult)
         {
-            return ssh.BeginCommand(commandText, outputPane, project, null, out asyncResult);
+            return ssh.BeginCommand(commandText, outputPane, null, out asyncResult);
         }
 
         private static readonly Regex errorRegex = new Regex(@"(.*\..*)\((.*)\,(.*)\)\: (.*)");
         private static readonly Regex locationlessErrorRegex = new Regex(@"(.*\..*?)\:(.*)");
 
-        private static SshCommand BeginCommand(this SshClient ssh, string commandText, IVsOutputWindowPane outputPane, string project, AsyncCallback callback, out IAsyncResult asyncResult)
+        private static SshCommand BeginCommand(this SshClient ssh, string commandText, IVsOutputWindowPane outputPane, AsyncCallback callback, out IAsyncResult asyncResult)
         {
             var command = ssh.CreateCommand(commandText);
-            asyncResult = command.BeginExecute(callback);
+            var isRunning = true;
+            asyncResult = command.BeginExecute(ar =>
+            {
+                isRunning = false;
+                callback?.Invoke(ar);
+            });
+            var asyncHandle = asyncResult;
+            Task.Run(() =>
+            {
+                using (var reader = new StreamReader(command.OutputStream))
+                {
+                    // This is so convoluted because strangely reader.ReadLine() will return null even when the program
+                    // is still running.  
+                    do
+                    {
+                        for (var line = reader.ReadLine(); line != null; line = reader.ReadLine())
+                        {
+                            outputPane.Log(line);
+                        }
+                        Thread.Sleep(10);
+                    }
+                    while (isRunning);
+
+                    var s = command.EndExecute(asyncHandle);
+                    if (!string.IsNullOrEmpty(s))
+                    {
+                        outputPane.Log(s);
+                    }
+                }
+            });
+            return command;
+        }
+
+        public static int RunCommand(this SshClient ssh, string commandText, IVsOutputWindowPane outputPane, string project)
+        {
+            var command = ssh.CreateCommand(commandText);
+            var asyncResult = command.BeginExecute(null);
+
             using (var reader = new StreamReader(command.OutputStream))
             {
                 var s = reader.ReadToEnd();
-                bool atWarnings = false;
-                bool atErrors = false;
+                var atWarnings = false;
+                var atErrors = false;
                 foreach (var line in s.Split('\n'))
                 {
                     if (line == "Warnings:")
@@ -75,13 +113,7 @@ namespace MonoProgram.Package.Utils
                     }
                 }
             }
-            return command;
-        }
 
-        public static int RunCommand(this SshClient ssh, string commandText, IVsOutputWindowPane outputPane, string project)
-        {
-            IAsyncResult asyncResult;
-            var command = ssh.BeginCommand(commandText, outputPane, project, out asyncResult);
             command.EndExecute(asyncResult);
             return command.ExitStatus;
         }

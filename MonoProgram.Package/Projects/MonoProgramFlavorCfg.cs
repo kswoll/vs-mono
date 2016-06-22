@@ -27,10 +27,11 @@ namespace MonoProgram.Package.Projects
         /// CustomPropertyPageProjectFlavorCfg.
         /// </summary>
         private static readonly Dictionary<IVsCfg, MonoProgramFlavorCfg> cfgs = new Dictionary<IVsCfg, MonoProgramFlavorCfg>();
-        private static readonly Dictionary<Project, MonoProgramFlavorCfg> cfgsByDteProject = new Dictionary<Project, MonoProgramFlavorCfg>();
+        private static readonly Dictionary<Tuple<Project, string>, MonoProgramFlavorCfg> cfgsByDteProject = new Dictionary<Tuple<Project, string>, MonoProgramFlavorCfg>();
 
         private readonly MonoProgramProjectFlavor project;
         private readonly IVsCfg baseProjectCfg;
+        private readonly IVsProjectCfg projectConfig;
         private readonly IVsProjectFlavorCfg innerProjectFlavorCfg;
         private readonly IVsDebuggableProjectCfg baseDebugConfiguration;
         private readonly Dictionary<string, string> propertiesList = new Dictionary<string, string>();
@@ -45,8 +46,13 @@ namespace MonoProgram.Package.Projects
             this.project = project;
             this.baseProjectCfg = baseProjectCfg;
             this.innerProjectFlavorCfg = innerProjectFlavorCfg;
+
+            projectConfig = (IVsProjectCfg2)baseProjectCfg;
+            string configurationName;
+            projectConfig.get_CanonicalName(out configurationName);
+
             cfgs.Add(baseProjectCfg, this);
-            cfgsByDteProject[GetDTEProject(project)] = this;
+            cfgsByDteProject[Tuple.Create(GetDTEProject(project), configurationName)] = this;
 
             var debugGuid = typeof(IVsDebuggableProjectCfg).GUID;
             IntPtr baseDebugConfigurationPtr;
@@ -140,6 +146,11 @@ namespace MonoProgram.Package.Projects
 
             isClosed = true;
             cfgs.Remove(baseProjectCfg);
+
+            string configurationName;
+            projectConfig.get_CanonicalName(out configurationName);
+            cfgsByDteProject.Remove(Tuple.Create(GetDTEProject(project), configurationName));
+            
             var hr = innerProjectFlavorCfg.Close();
 
             Marshal.ReleaseComObject(baseProjectCfg);
@@ -427,7 +438,7 @@ namespace MonoProgram.Package.Projects
 	        var sourceMappings = new List<MonoSourceMapping>();
 	        foreach (Project currentProject in dteProject.Collection)
 	        {
-	            var cfg = cfgsByDteProject[currentProject];
+	            var cfg = cfgsByDteProject[Tuple.Create(currentProject, $"{projectConfiguration.ConfigurationName}|{projectConfiguration.PlatformName}")];
 	            var sourceRoot = Path.GetDirectoryName(currentProject.FullName);
 	            var buildRoot = cfg[MonoPropertyPage.BuildFolderProperty].NullIfEmpty() ?? ConvertToUnixPath(sourceRoot);
                 sourceMappings.Add(new MonoSourceMapping(sourceRoot, buildRoot));
