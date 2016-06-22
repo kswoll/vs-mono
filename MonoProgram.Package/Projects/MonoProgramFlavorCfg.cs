@@ -581,7 +581,12 @@ namespace MonoProgram.Package.Projects
                     {
                         outputPane.Log("Starting xbuild to build the project");
                         ssh.Connect();
-                        ssh.RunCommand($"cd {buildFolder}; xbuild /p:Configuration={dteProject.ConfigurationManager.ActiveConfiguration.ConfigurationName} > xbuild.output; cat xbuild.output; rm xbuild.output", outputPane);
+                        var exitCode = ssh.RunCommand($@"cd {buildFolder}; xbuild /p:Configuration={dteProject.ConfigurationManager.ActiveConfiguration.ConfigurationName} > xbuild.output; exitcode=$?; cat xbuild.output; rm xbuild.output; exit ""$exitcode""", outputPane);
+                        if (exitCode != 0)
+                        {
+                            UpdateBuildStatus(0);
+                            return VSConstants.S_FALSE;
+                        }
                     }
 
 	                var projectConfiguration = dteProject.ConfigurationManager.ActiveConfiguration;
