@@ -497,7 +497,8 @@ namespace MonoProgram.Package.Projects
                 var bash = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Windows), "Sysnative", "bash.exe");
                 if (!File.Exists(bash))
                 {
-                    outputPane.LogError(dteProject.FullName, $"Error: You must set up a build server on the 'Mono' project property page.");
+//                    outputPane.LogError(dteProject.FullName, $"Error: You must set up a build server on the 'Mono' project property page.");
+                    outputPane.Log(VsLogSeverity.Error, dteProject.UniqueName, dteProject.FullName, "Error: You must set up a build server on the 'Mono' project property page.");
 
                     UpdateBuildStatus(0);
                     return VSConstants.S_FALSE;
@@ -581,7 +582,7 @@ namespace MonoProgram.Package.Projects
                     {
                         outputPane.Log("Starting xbuild to build the project");
                         ssh.Connect();
-                        var exitCode = ssh.RunCommand($@"cd {buildFolder}; xbuild /p:Configuration={dteProject.ConfigurationManager.ActiveConfiguration.ConfigurationName} > xbuild.output; exitcode=$?; cat xbuild.output; rm xbuild.output; exit ""$exitcode""", outputPane);
+                        var exitCode = ssh.RunCommand($@"cd {buildFolder}; xbuild /p:Configuration={dteProject.ConfigurationManager.ActiveConfiguration.ConfigurationName} > xbuild.output; exitcode=$?; cat xbuild.output; rm xbuild.output; exit ""$exitcode""", outputPane, dteProject.UniqueName);
                         if (exitCode != 0)
                         {
                             UpdateBuildStatus(0);

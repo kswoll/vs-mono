@@ -132,6 +132,7 @@
     <Compile Include="Utils\SftpExtensions.cs" />
     <Compile Include="Utils\SshExtensions.cs" />
     <Compile Include="Utils\StringExtensions.cs" />
+    <Compile Include="Utils\VsLogSeverity.cs" />
     <Compile Include="Utils\VsOutputWindowPaneExtensions.cs" />
   </ItemGroup>
   <ItemGroup>

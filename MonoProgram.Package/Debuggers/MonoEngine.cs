@@ -505,8 +505,8 @@ namespace MonoProgram.Package.Debuggers
                 connection.Ssh.RunCommand("cd ~");
                 Log("Launching application");
                 var commandText = $"mono --debug=mdb-optimizations --debugger-agent=transport=dt_socket,address=0.0.0.0:6438,server=y {targetExe}";
-                connection.Ssh.RunCommand("kill $(ps auxww | grep '" + commandText + "' | awk '{print $2}')", this.outputWindow);
-                runCommand = connection.Ssh.BeginCommand(commandText, this.outputWindow, ar =>
+                connection.Ssh.RunCommand("kill $(ps auxww | grep '" + commandText + "' | awk '{print $2}')", this.outputWindow, null);
+                runCommand = connection.Ssh.BeginCommand(commandText, this.outputWindow, null, ar =>
                 {
 // Persistent connection
 //                    sshClient.Disconnect();
