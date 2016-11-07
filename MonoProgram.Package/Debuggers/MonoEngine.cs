@@ -526,7 +526,10 @@ namespace MonoProgram.Package.Debuggers
 //                runCommand.EndExecute(runCommandAsyncResult);
                 Send(new MonoProgramDestroyEvent((uint?)x.ExitCode ?? 0), MonoProgramDestroyEvent.IID, null);
             };
-            Session.TargetUnhandledException += (sender, x) => Log(x.Backtrace.ToString());
+            Session.TargetUnhandledException += (sender, x) => 
+            {
+                Send(new MonoExceptionEvent(x.Backtrace.GetFrame(0)) { IsUnhandled = true }, MonoExceptionEvent.IID, ThreadManager[x.Thread]);
+            };
             Session.LogWriter = (stderr, text) => Console.WriteLine(text);
             Session.OutputWriter = (stderr, text) => Console.WriteLine(text);
             Session.TargetThreadStarted += (sender, x) => ThreadManager.Add(x.Thread, new MonoThread(this, x.Thread));
@@ -540,8 +543,7 @@ namespace MonoProgram.Package.Debuggers
             Session.TargetInterrupted += (sender, x) => Console.WriteLine(x.Type);
             Session.TargetExceptionThrown += (sender, x) =>
             {
-//                var catchpoint = x.BreakEvent as Catchpoint;
-                Send(new MonoBreakpointEvent(new MonoBoundBreakpointsEnum(new IDebugBoundBreakpoint2[0])), MonoStepCompleteEvent.IID, ThreadManager[x.Thread]);
+                Send(new MonoExceptionEvent(x.Backtrace.GetFrame(0)), MonoExceptionEvent.IID, ThreadManager[x.Thread]);
             };
             Session.TargetHitBreakpoint += (sender, x) =>
             {

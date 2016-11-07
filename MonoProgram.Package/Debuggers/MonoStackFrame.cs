@@ -371,7 +371,6 @@ namespace MonoProgram.Package.Debuggers
         }
 
         // Gets the language associated with this stack frame. 
-        // In this sample, all the supported stack frames are C++
         int IDebugStackFrame2.GetLanguageInfo(ref string pbstrLanguage, ref Guid pguidLanguage)
         {
             pbstrLanguage = "C#";
