@@ -64,6 +64,7 @@
     <Compile Include="Debuggers\Events\MonoBreakpointBoundEvent.cs" />
     <Compile Include="Debuggers\Events\MonoBreakpointEvent.cs" />
     <Compile Include="Debuggers\Events\MonoEngineCreateEvent.cs" />
+    <Compile Include="Debuggers\Events\MonoExceptionEvent.cs" />
     <Compile Include="Debuggers\Events\MonoExpressionCompleteEvent.cs" />
     <Compile Include="Debuggers\Events\MonoProgramCreateEvent.cs" />
     <Compile Include="Debuggers\Events\MonoProgramDestroyEvent.cs" />

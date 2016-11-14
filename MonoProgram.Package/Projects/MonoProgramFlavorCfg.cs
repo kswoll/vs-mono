@@ -438,10 +438,14 @@ namespace MonoProgram.Package.Projects
 	        var sourceMappings = new List<MonoSourceMapping>();
 	        foreach (Project currentProject in dteProject.Collection)
 	        {
-	            var cfg = cfgsByDteProject[Tuple.Create(currentProject, $"{projectConfiguration.ConfigurationName}|{projectConfiguration.PlatformName}")];
-	            var sourceRoot = Path.GetDirectoryName(currentProject.FullName);
-	            var buildRoot = cfg[MonoPropertyPage.BuildFolderProperty].NullIfEmpty() ?? ConvertToUnixPath(sourceRoot);
-                sourceMappings.Add(new MonoSourceMapping(sourceRoot, buildRoot));
+                MonoProgramFlavorCfg cfg;
+
+                if (cfgsByDteProject.TryGetValue(Tuple.Create(currentProject, $"{projectConfiguration.ConfigurationName}|{projectConfiguration.PlatformName}"), out cfg))
+                {
+                    var sourceRoot = Path.GetDirectoryName(currentProject.FullName);
+                    var buildRoot = cfg[MonoPropertyPage.BuildFolderProperty].NullIfEmpty() ?? ConvertToUnixPath(sourceRoot);
+                    sourceMappings.Add(new MonoSourceMapping(sourceRoot, buildRoot));
+                }
 	        }
 //	        var sourceRoot = projectFolder;
 //	        var buildRoot = this[MonoPropertyPage.BuildFolderProperty].NullIfEmpty() ?? ConvertToUnixPath(sourceRoot);

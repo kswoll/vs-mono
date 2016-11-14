@@ -55,7 +55,7 @@ namespace MonoProgram.Package.Debuggers
         public int GetLanguageInfo(ref string pbstrLanguage, ref Guid pguidLanguage)
         {
             pbstrLanguage = "C#";
-            pguidLanguage = new Guid("{694DD9B6-B865-4C5B-AD85-86356E9C88DC}");
+            pguidLanguage = DebuggerGuids.CSharpLanguageService;
             return VSConstants.S_OK;
         }
 
