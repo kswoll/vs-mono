@@ -14,6 +14,7 @@ using MonoProgram.Package.Debuggers;
 using MonoProgram.Package.ProgramProperties;
 using MonoProgram.Package.Utils;
 using Renci.SshNet;
+using Debugger = System.Diagnostics.Debugger;
 
 namespace MonoProgram.Package.Projects
 {
@@ -23,7 +24,7 @@ namespace MonoProgram.Package.Projects
         public const string BuildCategory = "build";
 
         /// <summary>
-        /// This allows the property page to map a IVsCfg object (the baseConfiguration) to an actual instance of 
+        /// This allows the property page to map a IVsCfg object (the baseConfiguration) to an actual instance of
         /// CustomPropertyPageProjectFlavorCfg.
         /// </summary>
         private static readonly Dictionary<IVsCfg, MonoProgramFlavorCfg> cfgs = new Dictionary<IVsCfg, MonoProgramFlavorCfg>();
@@ -150,7 +151,7 @@ namespace MonoProgram.Package.Projects
             string configurationName;
             projectConfig.get_CanonicalName(out configurationName);
             cfgsByDteProject.Remove(Tuple.Create(GetDTEProject(project), configurationName));
-            
+
             var hr = innerProjectFlavorCfg.Close();
 
             Marshal.ReleaseComObject(baseProjectCfg);
@@ -162,12 +163,12 @@ namespace MonoProgram.Package.Projects
         }
 
         /// <summary>
-        /// Implement the InitNew method to initialize the project extension properties and other build-independent data. This 
+        /// Implement the InitNew method to initialize the project extension properties and other build-independent data. This
         /// method is called if there is no XML configuration data present in the project file.
         /// </summary>
         /// <param name="guidFlavor">GUID of the project subtype.</param>
-        /// <param name="storage">Specifies the storage type used for persisting files. Values are taken from the 
-        /// _PersistStorageType enumeration. The file type is either project file (.csproj or .vbproj) or user file 
+        /// <param name="storage">Specifies the storage type used for persisting files. Values are taken from the
+        /// _PersistStorageType enumeration. The file type is either project file (.csproj or .vbproj) or user file
         /// (.csproj.user or .vbproj.user).</param>
         public int InitNew(ref Guid guidFlavor, uint storage)
         {
@@ -187,10 +188,10 @@ namespace MonoProgram.Package.Projects
         }
 
         /// <summary>
-        /// Implement the IsFragmentDirty method to determine whether an XML fragment has changed since it was last saved to 
+        /// Implement the IsFragmentDirty method to determine whether an XML fragment has changed since it was last saved to
         /// its current file.
         /// </summary>
-        /// <param name="storage">Storage type of the file in which the XML is persisted. Values are taken from 
+        /// <param name="storage">Storage type of the file in which the XML is persisted. Values are taken from
         /// _PersistStorageType enumeration.</param>
         /// <param name="pfDirty">Set to 1 if dirty, 0 if not</param>
         public int IsFragmentDirty(uint storage, out int pfDirty)
@@ -199,7 +200,7 @@ namespace MonoProgram.Package.Projects
             switch (storage)
             {
                 // Specifies storage file type to project file.
-                case (uint)_PersistStorageType.PST_PROJECT_FILE:                   
+                case (uint)_PersistStorageType.PST_PROJECT_FILE:
                     if (isDirty)
                         pfDirty |= 1;
                     break;
@@ -209,7 +210,7 @@ namespace MonoProgram.Package.Projects
                     break;
             }
 
-            // Forward the call to inner flavor(s) 
+            // Forward the call to inner flavor(s)
             if (pfDirty == 0 && innerProjectFlavorCfg is IPersistXMLFragment)
             {
                 return ((IPersistXMLFragment)innerProjectFlavorCfg).IsFragmentDirty(storage, out pfDirty);
@@ -222,7 +223,7 @@ namespace MonoProgram.Package.Projects
         /// Implement the Load method to load the XML data from the project file.
         /// </summary>
         /// <param name="guidFlavor">GUID of the project subtype.</param>
-        /// <param name="storage">Storage type of the file in which the XML is persisted. Values are taken from _PersistStorageType 
+        /// <param name="storage">Storage type of the file in which the XML is persisted. Values are taken from _PersistStorageType
         /// enumeration.</param>
         /// <param name="pszXMLFragment">String containing the XML fragment.</param>
         public int Load(ref Guid guidFlavor, uint storage, string pszXMLFragment)
@@ -242,7 +243,7 @@ namespace MonoProgram.Package.Projects
                             foreach (XmlNode child in node.FirstChild.ChildNodes)
                             {
                                 propertiesList.Add(child.Name, child.InnerText);
-                            }                            
+                            }
                         }
                         break;
                     case (uint)_PersistStorageType.PST_USER_FILE:
@@ -273,15 +274,15 @@ namespace MonoProgram.Package.Projects
 
             return VSConstants.S_OK;
         }
-        
+
         /// <summary>
         /// Implement the Save method to save the XML data in the project file.
         /// </summary>
         /// <param name="guidFlavor">GUID of the project subtype.</param>
-        /// <param name="storage">Storage type of the file in which the XML is persisted. Values are taken from 
+        /// <param name="storage">Storage type of the file in which the XML is persisted. Values are taken from
         /// _PersistStorageType enumeration.</param>
         /// <param name="pbstrXMLFragment">String containing the XML fragment.</param>
-        /// <param name="fClearDirty">Indicates whether to clear the dirty flag after the save is complete. If true, the flag 
+        /// <param name="fClearDirty">Indicates whether to clear the dirty flag after the save is complete. If true, the flag
         /// should be cleared. If false, the flag should be left unchanged.</param>
         public int Save(ref Guid guidFlavor, uint storage, out string pbstrXMLFragment, int fClearDirty)
         {
@@ -483,7 +484,7 @@ namespace MonoProgram.Package.Projects
             foreach (var callback in callbacks.Values.ToArray())
             {
                 callback.BuildEnd(status);
-            }            
+            }
         }
 
         public int AdviseBuildStatusCallback(IVsBuildStatusCallback callback, out uint pdwCookie)
@@ -506,6 +507,7 @@ namespace MonoProgram.Package.Projects
             var projectFolder = Path.GetDirectoryName(dteProject.FullName);
             outputPane.Log($"Starting build of {projectFolder}...");
 
+//            Debugger.Launch();
             // If using Windows Bash...
             if (string.IsNullOrEmpty(buildHost))
             {
@@ -583,7 +585,7 @@ namespace MonoProgram.Package.Projects
                             {
                                 fileName = FileUtils.ToRelativePath(projectFolder, fileName);
                                 client.Upload(projectFolder, fileName, createdDirectories);
-                                outputPane.Log($"Uploaded {fileName}");                                
+                                outputPane.Log($"Uploaded {fileName}");
                             }
                         }
 

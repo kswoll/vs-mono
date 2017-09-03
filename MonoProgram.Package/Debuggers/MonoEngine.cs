@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
@@ -119,7 +120,7 @@ namespace MonoProgram.Package.Debuggers
 
         public int RemoveSetException(EXCEPTION_INFO[] pException)
         {
-            if (breakpointManager.ContainsCatchpoint(pException[0].bstrExceptionName)) 
+            if (breakpointManager.ContainsCatchpoint(pException[0].bstrExceptionName))
             {
                 breakpointManager.Remove(breakpointManager[pException[0].bstrExceptionName]);
                 Session.Breakpoints.RemoveCatchpoint(pException[0].bstrExceptionName);
@@ -194,7 +195,7 @@ namespace MonoProgram.Package.Debuggers
             }
 
             ppEnum = new MonoThreadEnum(threadObjects);
-            
+
             return VSConstants.S_OK;
         }
 
@@ -442,7 +443,7 @@ namespace MonoProgram.Package.Debuggers
         {
             var monoThread = (MonoThread)pThread;
             var thread = monoThread.GetDebuggedThread();
-            if (Session.ActiveThread?.Id != thread.Id) 
+            if (Session.ActiveThread?.Id != thread.Id)
                 thread.SetActive();
             Session.Continue();
             return VSConstants.S_OK;
@@ -471,6 +472,7 @@ namespace MonoProgram.Package.Debuggers
                     if (!connection.IsConnected)
                     {
                         Log("Connecting SSH and SFTP...");
+//                        Debugger.Launch();
                         connection.Connect();
                         Log("Connected");
                     }
@@ -526,7 +528,7 @@ namespace MonoProgram.Package.Debuggers
 //                runCommand.EndExecute(runCommandAsyncResult);
                 Send(new MonoProgramDestroyEvent((uint?)x.ExitCode ?? 0), MonoProgramDestroyEvent.IID, null);
             };
-            Session.TargetUnhandledException += (sender, x) => 
+            Session.TargetUnhandledException += (sender, x) =>
             {
                 Send(new MonoExceptionEvent(x.Backtrace.GetFrame(0)) { IsUnhandled = true }, MonoExceptionEvent.IID, ThreadManager[x.Thread]);
             };
@@ -566,7 +568,7 @@ namespace MonoProgram.Package.Debuggers
         {
             IDebugPort2 port;
             EngineUtils.RequireOk(process.GetPort(out port));
-            
+
             IDebugDefaultPort2 defaultPort = (IDebugDefaultPort2)port;
             IDebugPortNotify2 portNotify;
             EngineUtils.RequireOk(defaultPort.GetPortNotify(out portNotify));
@@ -593,12 +595,12 @@ namespace MonoProgram.Package.Debuggers
                 waiter.WaitOne();
 
                 var ipAddress = HostUtils.ResolveHostOrIPAddress(settings.Host);
-                Session.Run(new SoftDebuggerStartInfo(new SoftDebuggerConnectArgs("", ipAddress, 6438)), 
+                Session.Run(new SoftDebuggerStartInfo(new SoftDebuggerConnectArgs("", ipAddress, 6438)),
                     new DebuggerSessionOptions { EvaluationOptions = EvaluationOptions.DefaultOptions, ProjectAssembliesOnly = false });
             });
 
             MonoEngineCreateEvent.Send(this);
-            MonoProgramCreateEvent.Send(this);                
+            MonoProgramCreateEvent.Send(this);
 
             return VSConstants.S_OK;
         }

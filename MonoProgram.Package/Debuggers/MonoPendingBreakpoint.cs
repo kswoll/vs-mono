@@ -14,7 +14,7 @@ namespace MonoProgram.Package.Debuggers
 
         private readonly MonoBreakpointManager breakpointManager;
         private readonly IDebugBreakpointRequest2 request;
-        private readonly BP_REQUEST_INFO requestInfo; 
+        private readonly BP_REQUEST_INFO requestInfo;
         private readonly List<MonoBoundBreakpoint> boundBreakpoints = new List<MonoBoundBreakpoint>();
         private Breakpoint breakpoint;
         private bool isDeleted;
@@ -63,7 +63,7 @@ namespace MonoProgram.Package.Debuggers
                 uint address = 0;
                 var breakpointResolution = new MonoBreakpointResolution(engine, address, GetDocumentContext(address));
                 var boundBreakpoint = new MonoBoundBreakpoint(engine, address, this, breakpointResolution);
-                boundBreakpoints.Add(boundBreakpoint);                    
+                boundBreakpoints.Add(boundBreakpoint);
 
                 engine.Send(new MonoBreakpointBoundEvent(this, boundBreakpoint), MonoBreakpointBoundEvent.IID, null);
             }
@@ -76,8 +76,9 @@ namespace MonoProgram.Package.Debuggers
             TEXT_POSITION[] startPosition;
             TEXT_POSITION[] endPosition;
             var documentName = breakpointManager.Engine.GetLocationInfo(requestInfo.bpLocation.unionmember2, out startPosition, out endPosition);
+//            documentName = breakpointManager.Engine.TranslateToBuildServerPath(documentName);
             var codeContext = new MonoMemoryAddress(breakpointManager.Engine, address, null);
-            
+
             return new MonoDocumentContext(documentName, startPosition[0], endPosition[0], codeContext);
         }
 
@@ -87,7 +88,7 @@ namespace MonoProgram.Package.Debuggers
                 state[0].state = (enum_PENDING_BP_STATE)enum_BP_STATE.BPS_DELETED;
             else if (isEnabled)
                 state[0].state = (enum_PENDING_BP_STATE)enum_BP_STATE.BPS_ENABLED;
-            else 
+            else
                 state[0].state = (enum_PENDING_BP_STATE)enum_BP_STATE.BPS_DISABLED;
 
             return VSConstants.S_OK;
@@ -119,7 +120,7 @@ namespace MonoProgram.Package.Debuggers
                 foreach (var boundBreakpoint in boundBreakpoints)
                 {
                     boundBreakpoint.Enable(enable);
-                }                
+                }
             }
 
             return VSConstants.S_OK;
@@ -129,7 +130,7 @@ namespace MonoProgram.Package.Debuggers
         {
             breakpoint.ConditionExpression = condition.bstrCondition;
             breakpoint.BreakIfConditionChanges = condition.styleCondition == enum_BP_COND_STYLE.BP_COND_WHEN_CHANGED;
-                
+
             return VSConstants.S_OK;
         }
 
